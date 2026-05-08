@@ -37,7 +37,7 @@ export function useCommutes(stops: Stop[]): Record<string, CommuteResult> {
           const res = await svc.route({
             origin: { lat: a.lat, lng: a.lng },
             destination: { lat: b.lat, lng: b.lng },
-            travelMode: mode as unknown as google.maps.TravelMode,
+            travelMode: mode as unknown as never,
           });
           const leg = res.routes[0]?.legs[0];
           if (!leg?.duration) continue;
