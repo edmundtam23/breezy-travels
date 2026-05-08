@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Breezysheep Travel Planner" },
+      { name: "description", content: "Trip Planner Pro is a web app for creating and managing travel itineraries with interactive map integration." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Breezysheep Travel Planner" },
+      { property: "og:description", content: "Trip Planner Pro is a web app for creating and managing travel itineraries with interactive map integration." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Breezysheep Travel Planner" },
+      { name: "twitter:description", content: "Trip Planner Pro is a web app for creating and managing travel itineraries with interactive map integration." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e6b84806-0aa9-4390-856e-70dc5ace27b7/id-preview-e0e15cda--e12c0c5b-b622-4057-8892-c69d6da710ed.lovable.app-1778207265142.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e6b84806-0aa9-4390-856e-70dc5ace27b7/id-preview-e0e15cda--e12c0c5b-b622-4057-8892-c69d6da710ed.lovable.app-1778207265142.png" },
     ],
     links: [
       {
