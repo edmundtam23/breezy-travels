@@ -1,0 +1,44 @@
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { APIProvider } from "@vis.gl/react-google-maps";
+import { getMapsApiKey } from "@/lib/itinerary.functions";
+
+let cachedKey: string | null = null;
+let pending: Promise<string> | null = null;
+
+function loadKey(fn: () => Promise<{ key: string }>) {
+  if (cachedKey !== null) return Promise.resolve(cachedKey);
+  if (!pending) {
+    pending = fn().then((r) => {
+      cachedKey = r.key;
+      return r.key;
+    });
+  }
+  return pending;
+}
+
+export function MapsProvider({ children }: { children: React.ReactNode }) {
+  const fn = useServerFn(getMapsApiKey);
+  const [key, setKey] = useState<string | null>(cachedKey);
+
+  useEffect(() => {
+    loadKey(fn).then(setKey).catch(() => setKey(""));
+  }, [fn]);
+
+  if (key === null) {
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading map…</div>;
+  }
+  if (!key) {
+    return (
+      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
+        Google Maps API key missing. Add GOOGLE_MAPS_API_KEY in project settings.
+      </div>
+    );
+  }
+
+  return (
+    <APIProvider apiKey={key} libraries={["places", "marker"]}>
+      {children}
+    </APIProvider>
+  );
+}
