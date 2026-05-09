@@ -102,7 +102,7 @@ function TripBuilder() {
               onSelect={setActiveStopId}
             />
             {trip.days.length > 1 && (
-              <div className="absolute left-4 top-4 z-10">
+              <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
                 <Tabs
                   value={String(safeDayIdx)}
                   onValueChange={(v) => setActiveDayIdx(Number(v))}
