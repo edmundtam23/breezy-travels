@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Map,
   AdvancedMarker,
+  ControlPosition,
   useMap,
   useMapsLibrary,
 } from "@vis.gl/react-google-maps";
@@ -28,6 +29,10 @@ export function MapPanel({ stops, activeStopId, onSelect }: Props) {
       defaultZoom={12}
       gestureHandling="greedy"
       disableDefaultUI={false}
+      mapTypeControlOptions={{ position: ControlPosition.LEFT_BOTTOM }}
+      zoomControlOptions={{ position: ControlPosition.RIGHT_BOTTOM }}
+      streetViewControlOptions={{ position: ControlPosition.RIGHT_BOTTOM }}
+      fullscreenControlOptions={{ position: ControlPosition.RIGHT_TOP }}
       className="h-full w-full"
     >
       <FitBounds stops={stops} />
