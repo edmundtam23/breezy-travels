@@ -622,6 +622,7 @@ function EditPopover({
             onClick={() => {
               onChange({ blurb, durationMin: Math.max(5, duration) });
               toast.success("Saved");
+              setOpen(false);
             }}
           >
             <Check className="mr-1 h-3 w-3" /> Done
