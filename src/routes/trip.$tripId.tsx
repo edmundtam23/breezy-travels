@@ -44,6 +44,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { TimePicker } from "@/components/time-picker";
 import {
   Select,
   SelectContent,
@@ -541,15 +542,7 @@ function modeIcon(m: TravelMode) {
 }
 
 function TimeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <input
-      type="time"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onClick={(e) => e.stopPropagation()}
-      className="bg-transparent text-sm font-medium text-foreground focus:outline-none"
-    />
-  );
+  return <TimePicker value={value} onChange={onChange} />;
 }
 
 function EditPopover({
