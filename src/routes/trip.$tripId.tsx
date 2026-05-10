@@ -557,12 +557,13 @@ function EditPopover({
   const [blurb, setBlurb] = useState(stop.blurb);
   const [duration, setDuration] = useState(stop.durationMin);
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
   const aiBlurb = useServerFn(generateBlurb);
   useEffect(() => setBlurb(stop.blurb), [stop.blurb]);
   useEffect(() => setDuration(stop.durationMin), [stop.durationMin]);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           className="rounded p-1 text-muted-foreground hover:bg-muted"
@@ -621,6 +622,7 @@ function EditPopover({
             onClick={() => {
               onChange({ blurb, durationMin: Math.max(5, duration) });
               toast.success("Saved");
+              setOpen(false);
             }}
           >
             <Check className="mr-1 h-3 w-3" /> Done
