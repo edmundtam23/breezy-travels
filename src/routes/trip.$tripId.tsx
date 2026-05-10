@@ -43,6 +43,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  PopoverClose,
 } from "@/components/ui/popover";
 import { TimePicker } from "@/components/time-picker";
 import {
@@ -616,17 +617,19 @@ function EditPopover({
               onBlur={() => onChange({ blurb })}
             />
           </div>
-          <Button
-            size="sm"
-            className="w-full"
-            onClick={() => {
-              onChange({ blurb, durationMin: Math.max(5, duration) });
-              toast.success("Saved");
-              setOpen(false);
-            }}
-          >
-            <Check className="mr-1 h-3 w-3" /> Done
-          </Button>
+          <PopoverClose asChild>
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                setOpen(false);
+                onChange({ blurb, durationMin: Math.max(5, duration) });
+                toast.success("Saved");
+              }}
+            >
+              <Check className="mr-1 h-3 w-3" /> Done
+            </Button>
+          </PopoverClose>
         </div>
       </PopoverContent>
     </Popover>
