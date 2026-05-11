@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
 export const getMapsApiKey = createServerFn({ method: "GET" }).handler(async () => {
@@ -29,125 +30,111 @@ const ItinerarySchema = z.object({
   days: z.array(DaySchema),
 });
 
+const MODEL = "gemini-2.5-flash";
+
+function getClient() {
+  const apiKey = process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error("VITE_GEMINI_API_KEY not configured");
+  return new GoogleGenAI({ apiKey });
+}
+
 export const generateItinerary = createServerFn({ method: "POST" })
   .inputValidator((d: { prompt: string; days: number }) => d)
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    const ai = getClient();
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a travel itinerary planner. Generate realistic itineraries with real, well-known points of interest. Provide accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times should be in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise).",
-          },
+    try {
+      const res = await ai.models.generateContent({
+        model: MODEL,
+        contents: [
           {
             role: "user",
-            content: `Plan a ${data.days}-day trip: ${data.prompt}`,
+            parts: [
+              {
+                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise).`,
+              },
+            ],
           },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "build_itinerary",
-              description: "Return a structured travel itinerary",
-              parameters: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  destination: { type: "string" },
-                  days: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string" },
-                        summary: { type: "string" },
-                        stops: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              name: { type: "string" },
-                              address: { type: "string" },
-                              lat: { type: "number" },
-                              lng: { type: "number" },
-                              time: { type: "string" },
-                              durationMin: { type: "number" },
-                              blurb: { type: "string" },
-                              category: { type: "string" },
-                              travelModeToNext: {
-                                type: "string",
-                                enum: ["WALKING", "DRIVING", "TRANSIT"],
-                              },
-                            },
-                            required: ["name", "lat", "lng", "time", "durationMin", "blurb"],
+        config: {
+          systemInstruction:
+            "You are a travel itinerary planner. Generate realistic itineraries with real, well-known points of interest and accurate coordinates.",
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              destination: { type: Type.STRING },
+              days: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    summary: { type: Type.STRING },
+                    stops: {
+                      type: Type.ARRAY,
+                      items: {
+                        type: Type.OBJECT,
+                        properties: {
+                          name: { type: Type.STRING },
+                          address: { type: Type.STRING },
+                          lat: { type: Type.NUMBER },
+                          lng: { type: Type.NUMBER },
+                          time: { type: Type.STRING },
+                          durationMin: { type: Type.NUMBER },
+                          blurb: { type: Type.STRING },
+                          category: { type: Type.STRING },
+                          travelModeToNext: {
+                            type: Type.STRING,
+                            enum: ["WALKING", "DRIVING", "TRANSIT"],
                           },
                         },
+                        required: ["name", "lat", "lng", "time", "durationMin", "blurb"],
                       },
-                      required: ["title", "summary", "stops"],
                     },
                   },
+                  required: ["title", "summary", "stops"],
                 },
-                required: ["title", "destination", "days"],
               },
             },
+            required: ["title", "destination", "days"],
           },
-        ],
-        tool_choice: { type: "function", function: { name: "build_itinerary" } },
-      }),
-    });
+        },
+      });
 
-    if (!res.ok) {
-      const t = await res.text();
-      if (res.status === 429) throw new Error("Rate limit exceeded. Please try again shortly.");
-      if (res.status === 402)
-        throw new Error("AI credits exhausted. Add credits in Settings → Workspace → Usage.");
-      throw new Error(`AI gateway error ${res.status}: ${t}`);
+      const text = res.text;
+      if (!text) throw new Error("No itinerary generated");
+      const parsed = ItinerarySchema.parse(JSON.parse(text));
+      return parsed;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/429|rate/i.test(msg))
+        throw new Error("Rate limit exceeded. Please try again shortly.");
+      if (/quota|billing|402/i.test(msg))
+        throw new Error("Gemini API quota exceeded. Check your Google AI Studio billing.");
+      throw new Error(`Gemini error: ${msg}`);
     }
-    const json = await res.json();
-    const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!args) throw new Error("No itinerary generated");
-    const parsed = ItinerarySchema.parse(typeof args === "string" ? JSON.parse(args) : args);
-    return parsed;
   });
 
 export const generateBlurb = createServerFn({ method: "POST" })
   .inputValidator((d: { name: string; destination?: string }) => d)
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+      model: MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: `${data.name}${data.destination ? ` in ${data.destination}` : ""}` },
+          ],
+        },
+      ],
+      config: {
+        systemInstruction:
+          "Write a single concise sentence (max 22 words) describing a travel point of interest. No emojis, no quotes.",
       },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Write a single concise sentence (max 22 words) describing a travel point of interest. No emojis, no quotes.",
-          },
-          {
-            role: "user",
-            content: `${data.name}${data.destination ? ` in ${data.destination}` : ""}`,
-          },
-        ],
-      }),
     });
-    if (!res.ok) throw new Error(`AI error ${res.status}`);
-    const json = await res.json();
-    return { blurb: (json.choices?.[0]?.message?.content ?? "").trim() };
+    return { blurb: (res.text ?? "").trim() };
   });
