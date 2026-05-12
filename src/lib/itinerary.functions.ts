@@ -16,7 +16,7 @@ function readEnv(name: string): string | undefined {
 }
 
 export function getMapsApiKey(): string {
-  const key = readEnv("GEMINI_API_KEY") ?? "";
+  const key = readEnv("GOOGLE_MAPS_API_KEY") ?? "";
   return key;
 }
 
