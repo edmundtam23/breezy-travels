@@ -15,6 +15,11 @@ function readEnv(name: string): string | undefined {
   return undefined;
 }
 
+export function getMapsApiKey(): string {
+  const key = readEnv("GEMINI_API_KEY") ?? "";
+  return key;
+}
+
 const StopSchema = z.object({
   name: z.string(),
   address: z.string().optional().default(""),
