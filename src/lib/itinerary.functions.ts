@@ -15,10 +15,11 @@ function readEnv(name: string): string | undefined {
   return undefined;
 }
 
-export function getMapsApiKey(): string {
-  const key = readEnv("GOOGLE_MAPS_API_KEY") ?? "";
-  return key;
-}
+export const getMapsApiKey = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const key = readEnv("GOOGLE_MAPS_API_KEY") ?? "";
+    return { key };
+  });
 
 const StopSchema = z.object({
   name: z.string(),
