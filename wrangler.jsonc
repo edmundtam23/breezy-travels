@@ -4,4 +4,9 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  // GEMINI_API_KEY is provisioned as a Worker secret binding (set via the Lovable
+  // secrets manager / `wrangler secret put GEMINI_API_KEY`). It is exposed on the
+  // per-request `env` object and forwarded to globalThis in src/server.ts so that
+  // server functions (see src/lib/itinerary.functions.ts) can read it.
+  "vars": {}
 }

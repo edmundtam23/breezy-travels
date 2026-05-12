@@ -69,6 +69,16 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Expose Cloudflare Worker env bindings (secrets/vars) to server functions.
+      // In Workers, env is passed per-request and is NOT on process.env or globalThis by default.
+      (globalThis as unknown as { __env?: unknown }).__env = env;
+      if (env && typeof env === "object") {
+        for (const [k, v] of Object.entries(env as Record<string, unknown>)) {
+          if (typeof v === "string") {
+            (globalThis as unknown as Record<string, unknown>)[k] = v;
+          }
+        }
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
