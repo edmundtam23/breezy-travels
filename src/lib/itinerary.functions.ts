@@ -2,8 +2,24 @@ import { createServerFn } from "@tanstack/react-start";
 import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
+function readEnv(name: string): string | undefined {
+  // Cloudflare Workers: secrets are exposed via the `cloudflare:workers` env binding.
+  // Fall back to process.env for local Node/dev runtimes.
+  try {
+    // Dynamic require avoids bundling errors in non-Worker environments.
+    const mod = (globalThis as { __cfEnv?: Record<string, string> }).__cfEnv;
+    if (mod && mod[name]) return mod[name];
+  } catch {
+    // ignore
+  }
+  if (typeof process !== "undefined" && process.env && process.env[name]) {
+    return process.env[name];
+  }
+  return undefined;
+}
+
 export const getMapsApiKey = createServerFn({ method: "GET" }).handler(async () => {
-  return { key: process.env.GOOGLE_MAPS_API_KEY ?? "" };
+  return { key: readEnv("GOOGLE_MAPS_API_KEY") ?? "" };
 });
 
 const StopSchema = z.object({
