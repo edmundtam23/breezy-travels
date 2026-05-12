@@ -2,8 +2,25 @@ import { createServerFn } from "@tanstack/react-start";
 import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
+function readEnv(name: string): string | undefined {
+  // Cloudflare Workers: secrets/vars are exposed via the `cloudflare:workers` env binding.
+  // Fall back to process.env for local Node/dev runtimes.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cf = require("cloudflare:workers") as { env?: Record<string, string | undefined> };
+    const v = cf?.env?.[name];
+    if (v) return v;
+  } catch {
+    // not running on Cloudflare Workers
+  }
+  if (typeof process !== "undefined" && process.env && process.env[name]) {
+    return process.env[name];
+  }
+  return undefined;
+}
+
 export const getMapsApiKey = createServerFn({ method: "GET" }).handler(async () => {
-  return { key: process.env.GOOGLE_MAPS_API_KEY ?? "" };
+  return { key: readEnv("GOOGLE_MAPS_API_KEY") ?? "" };
 });
 
 const StopSchema = z.object({
@@ -33,7 +50,7 @@ const ItinerarySchema = z.object({
 const MODEL = "gemini-2.5-flash";
 
 function getClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = readEnv("GEMINI_API_KEY");
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
   return new GoogleGenAI({ apiKey });
 }
