@@ -3,16 +3,9 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
 function readEnv(name: string): string | undefined {
-  // 1. Cloudflare Workers: env bindings are stashed on globalThis by src/server.ts
-  const g = globalThis as unknown as Record<string, unknown> & { __env?: Record<string, unknown> };
-  const fromBinding = g.__env?.[name];
-  if (typeof fromBinding === "string" && fromBinding) return fromBinding;
-  const fromGlobal = g[name];
+  const fromGlobal = (globalThis as unknown as Record<string, unknown>)[name];
   if (typeof fromGlobal === "string" && fromGlobal) return fromGlobal;
-  // 2. Local Node/dev runtime
-  if (typeof process !== "undefined" && process.env && process.env[name]) {
-    return process.env[name];
-  }
+  if (typeof process !== "undefined" && process.env?.[name]) return process.env[name];
   return undefined;
 }
 
