@@ -3,14 +3,15 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
 function readEnv(name: string): string | undefined {
-  // Cloudflare Workers: secrets are exposed via the `cloudflare:workers` env binding.
+  // Cloudflare Workers: secrets/vars are exposed via the `cloudflare:workers` env binding.
   // Fall back to process.env for local Node/dev runtimes.
   try {
-    // Dynamic require avoids bundling errors in non-Worker environments.
-    const mod = (globalThis as { __cfEnv?: Record<string, string> }).__cfEnv;
-    if (mod && mod[name]) return mod[name];
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cf = require("cloudflare:workers") as { env?: Record<string, string | undefined> };
+    const v = cf?.env?.[name];
+    if (v) return v;
   } catch {
-    // ignore
+    // not running on Cloudflare Workers
   }
   if (typeof process !== "undefined" && process.env && process.env[name]) {
     return process.env[name];
