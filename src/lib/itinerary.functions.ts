@@ -50,7 +50,7 @@ const ItinerarySchema = z.object({
 const MODEL = "gemini-2.5-flash";
 
 function getClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = readEnv("GEMINI_API_KEY");
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
   return new GoogleGenAI({ apiKey });
 }
