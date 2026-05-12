@@ -3,15 +3,17 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
 function readEnv(name: string): string | undefined {
-  const fromGlobal = (globalThis as unknown as Record<string, unknown>)[name];
-  if (typeof fromGlobal === "string" && fromGlobal) return fromGlobal;
-  if (typeof process !== "undefined" && process.env?.[name]) return process.env[name];
+  const g = globalThis as unknown as Record<string, unknown> & {
+    __env?: Record<string, unknown>
+  };
+  const fromBinding = g.__env?.[name];
+  if (typeof fromBinding === "string") return fromBinding;
+  if (typeof g[name] === "string") return g[name] as string;
+  if (typeof process !== "undefined" && process.env?.[name]) {
+    return process.env[name];
+  }
   return undefined;
 }
-
-export const getMapsApiKey = createServerFn({ method: "GET" }).handler(async () => {
-  return { key: readEnv("GOOGLE_MAPS_API_KEY") ?? "" };
-});
 
 const StopSchema = z.object({
   name: z.string(),
