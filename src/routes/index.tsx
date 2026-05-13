@@ -21,24 +21,48 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useTrips, saveTrip, deleteTrip, newId } from "@/lib/storage";
 import { generateItinerary } from "@/lib/itinerary.functions";
+import { supabase } from "@/lib/supabase";
+import { signOut } from "@/lib/auth";
+import { useEffect, useState as useStateAlias } from "react";
+import type { User } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Itinerary Studio — Plan smarter trips" },
+      { title: "Breezy Plans — AI-Powered Trip Planner" },
       {
         name: "description",
         content:
-          "Build day-by-day travel itineraries on a map, with drag-and-drop reordering and Google Maps commute warnings.",
+          "Plan your next trip with AI. Build day-by-day itineraries, explore stops on a map, and travel smarter with Breezy Plans.",
       },
     ],
   }),
   component: HomePage,
 });
 
+function useCurrentUser() {
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+  return user;
+}
+
 function HomePage() {
   const trips = useTrips();
+  const user = useCurrentUser();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/login" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Toaster />
@@ -46,9 +70,30 @@ function HomePage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            <span className="text-lg font-semibold">Itinerary Studio</span>
+            <span className="text-lg font-semibold">Breezy Plans</span>
           </div>
-          <NewTripDialog />
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground hidden sm:block">
+                  {user.email}
+                </span>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  Sign out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm">Sign in</Button>
+                </Link>
+                <Link to="/signup">
+                  <Button size="sm">Sign up</Button>
+                </Link>
+              </>
+            )}
+            <NewTripDialog />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-10">
@@ -57,7 +102,18 @@ function HomePage() {
           Plan day-by-day itineraries, reorder stops on a map, and catch tight commute
           windows before they catch you.
         </p>
-
+        {!user && (
+          <div className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            <Link to="/signup" className="font-medium text-primary hover:underline">
+              Create an account
+            </Link>{" "}
+            or{" "}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              sign in
+            </Link>{" "}
+            to save your trips across devices.
+          </div>
+        )}
         {trips.length === 0 ? (
           <EmptyState />
         ) : (
@@ -178,7 +234,7 @@ function NewTripDialog() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      saveTrip(trip);
+      await saveTrip(trip);
       setOpen(false);
       reset();
       navigate({ to: "/trip/$tripId", params: { tripId: trip.id } });
@@ -188,7 +244,7 @@ function NewTripDialog() {
     }
   };
 
-  const handleBlank = () => {
+  const handleBlank = async () => {
     if (!title.trim() || !destination.trim()) {
       toast.error("Trip title and destination are required.");
       return;
@@ -206,7 +262,7 @@ function NewTripDialog() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    saveTrip(trip);
+    await saveTrip(trip);
     setOpen(false);
     reset();
     navigate({ to: "/trip/$tripId", params: { tripId: trip.id } });
