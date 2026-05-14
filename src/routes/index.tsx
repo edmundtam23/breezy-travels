@@ -299,14 +299,14 @@ function NewTripDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="days-ai">Days</Label>
-             <Input
+              <Input
                 id="days-ai"
                 type="number"
                 min={1}
                 value={days}
                 onChange={(e) => setDays(Number(e.target.value) || 1)}
                 onFocus={(e) => e.target.select()}
-             />
+              />
             </div>
             <DialogFooter>
               <Button onClick={handleAi} disabled={loading}>
@@ -342,10 +342,10 @@ function NewTripDialog() {
                 value={days}
                 onChange={(e) => setDays(Number(e.target.value) || 1)}
                 onFocus={(e) => e.target.select()}
-               />
+              />
             </div>
             <DialogFooter>
-              <Button onClick={handleBlank}>Create blank trip</Button>
+              <Button onClick={handleBlank}>Create trip</Button>
             </DialogFooter>
           </TabsContent>
         </Tabs>
