@@ -303,9 +303,9 @@ function NewTripDialog() {
                 id="days-ai"
                 type="number"
                 min={1}
-                max={7}
                 value={days}
-                onChange={(e) => setDays(Math.max(1, Math.min(7, Number(e.target.value) || 1)))}
+                onChange={(e) => setDays(Number(e.target.value) || 1)))}
+                onFocus={(e) => e.target.select()}
               />
             </div>
             <DialogFooter>
