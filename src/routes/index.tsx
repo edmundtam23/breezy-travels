@@ -284,7 +284,7 @@ function NewTripDialog() {
             <TabsTrigger value="ai">
               <Sparkles className="mr-1 h-4 w-4" /> AI draft
             </TabsTrigger>
-            <TabsTrigger value="blank">Blank</TabsTrigger>
+            <TabsTrigger value="blank">Manual</TabsTrigger>
           </TabsList>
           <TabsContent value="ai" className="space-y-4 pt-4">
             <div className="space-y-2">
