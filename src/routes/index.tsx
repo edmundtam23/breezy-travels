@@ -75,7 +75,7 @@ function HomePage() {
             {user ? (
               <>
                 <span className="text-sm text-muted-foreground hidden sm:block">
-                  {user.email}
+                  {user.email?.split("@")[0]}
                 </span>
                 <Button variant="outline" size="sm" onClick={handleSignOut}>
                   Sign out
