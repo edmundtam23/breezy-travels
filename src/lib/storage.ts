@@ -1,6 +1,3 @@
-
-Copy
-
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import type { Trip } from "./types";
