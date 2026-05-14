@@ -304,7 +304,7 @@ function NewTripDialog() {
                 type="number"
                 min={1}
                 value={days}
-                onChange={(e) => setDays(Number(e.target.value) || 1))}
+                onChange={(e) => setDays(Number(e.target.value) || 1)}
                 onFocus={(e) => e.target.select()}
               />
             </div>
@@ -340,7 +340,7 @@ function NewTripDialog() {
                 type="number"
                 min={1}
                 value={days}
-                onChange={(e) => setDays(Number(e.target.value) || 1))}
+                onChange={(e) => setDays(Number(e.target.value) || 1)}
                 onFocus={(e) => e.target.select()}
               />
             </div>
