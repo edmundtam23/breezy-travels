@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MapPin, Plus, Sparkles, Trash2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ import { useTrips, saveTrip, deleteTrip, newId } from "@/lib/storage";
 import { generateItinerary } from "@/lib/itinerary.functions";
 import { supabase } from "@/lib/supabase";
 import { signOut } from "@/lib/auth";
-import { useEffect, useState as useStateAlias } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
 
