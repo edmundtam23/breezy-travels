@@ -307,7 +307,12 @@ function NewTripDialog() {
                 min={1}
                 max={14}
                 value={days}
-                onChange={(e) => setDays(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => {
+    let value = e.target.value === "" ? "" : Number(e.target.value);
+    if (typeof value === "number" && value > 14) value = 14;
+    if (typeof value === "number" && value < 1) value = 1;
+    setDays(value);
+  }}
                 onFocus={(e) => e.target.select()}
               />
             </div>
@@ -344,7 +349,12 @@ function NewTripDialog() {
                 min={1}
                 max={14}
                 value={days}
-                onChange={(e) => setDays(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => {
+    let value = e.target.value === "" ? "" : Number(e.target.value);
+    if (typeof value === "number" && value > 14) value = 14;
+    if (typeof value === "number" && value < 1) value = 1;
+    setDays(value);
+  }}
                 onFocus={(e) => e.target.select()}
               />
             </div>
