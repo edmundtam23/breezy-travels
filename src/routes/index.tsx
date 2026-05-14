@@ -186,7 +186,7 @@ function NewTripDialog() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("ai");
   const [prompt, setPrompt] = useState("");
-  const [days, setDays] = useState(2);
+  const [days, setDays] = useState<number | "">(2);
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
   const [loading, setLoading] = useState(false);
@@ -206,9 +206,10 @@ function NewTripDialog() {
       toast.error("Add a quick prompt to start.");
       return;
     }
+    const numDays = Number(days) || 1;
     setLoading(true);
     try {
-      const res = await aiFn({ data: { prompt: prompt.trim(), days } });
+      const res = await aiFn({ data: { prompt: prompt.trim(), days: numDays } });
       const trip: Trip = {
         id: newId(),
         title: res.title,
@@ -248,11 +249,12 @@ function NewTripDialog() {
       toast.error("Trip title and destination are required.");
       return;
     }
+    const numDays = Number(days) || 1;
     const trip: Trip = {
       id: newId(),
       title: title.trim(),
       destination: destination.trim(),
-      days: Array.from({ length: days }, (_, i) => ({
+      days: Array.from({ length: numDays }, (_, i) => ({
         id: newId(),
         title: `Day ${i + 1}`,
         summary: "",
@@ -303,8 +305,9 @@ function NewTripDialog() {
                 id="days-ai"
                 type="number"
                 min={1}
+                max={14}
                 value={days}
-                onChange={(e) => setDays(Number(e.target.value) || 1)}
+                onChange={(e) => setDays(e.target.value === "" ? "" : Number(e.target.value))}
                 onFocus={(e) => e.target.select()}
               />
             </div>
@@ -339,8 +342,9 @@ function NewTripDialog() {
                 id="days-b"
                 type="number"
                 min={1}
+                max={14}
                 value={days}
-                onChange={(e) => setDays(Number(e.target.value) || 1)}
+                onChange={(e) => setDays(e.target.value === "" ? "" : Number(e.target.value))}
                 onFocus={(e) => e.target.select()}
               />
             </div>
