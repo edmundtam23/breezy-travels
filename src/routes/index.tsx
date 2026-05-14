@@ -59,7 +59,7 @@ function HomePage() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate({ to: "/login" });
+    navigate({ to: "/" });
   };
 
   return (
