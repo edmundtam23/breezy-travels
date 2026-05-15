@@ -161,7 +161,7 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="text-left text-base font-semibold hover:underline truncate max-w-[55vw]"
+            className="text-left text-base font-semibold hover:underline truncate max-w-[calc(100vw-80px)]"
           >
             {trip.title}
           </button>
