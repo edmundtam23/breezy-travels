@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -74,8 +74,6 @@ function TripBuilder() {
   const navigate = useNavigate();
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const dragStartY = useRef<number | null>(null);
 
   if (!trip) {
     return (
@@ -93,34 +91,13 @@ function TripBuilder() {
   const safeDayIdx = Math.min(activeDayIdx, trip.days.length - 1);
   const day = trip.days[safeDayIdx];
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    dragStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (dragStartY.current === null) return;
-    const dragEndY = e.changedTouches[0].clientY;
-    const dragDistance = dragEndY - dragStartY.current;
-    
-    // If dragged up more than 80px, collapse
-    if (dragDistance < -80) {
-      setCollapsed(true);
-    }
-    // If dragged down more than 80px, expand
-    else if (dragDistance > 80) {
-      setCollapsed(false);
-    }
-    
-    dragStartY.current = null;
-  };
-
   return (
     <MapsProvider>
       <div className="flex h-screen flex-col bg-background">
         <Toaster />
         <Header trip={trip} update={update} />
         <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[1fr_440px]">
-          <div className={`relative min-h-[30vh] transition-all duration-300 ${collapsed ? 'h-0 min-h-0' : ''}`}>
+          <div className="relative min-h-[30vh]">
             <MapPanel
               stops={day?.stops ?? []}
               activeStopId={activeStopId}
@@ -150,9 +127,6 @@ function TripBuilder() {
             update={update}
             activeStopId={activeStopId}
             setActiveStopId={setActiveStopId}
-            collapsed={collapsed}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
           />
         </div>
       </div>
@@ -205,9 +179,6 @@ function Sidebar({
   update,
   activeStopId,
   setActiveStopId,
-  collapsed,
-  onTouchStart,
-  onTouchEnd,
 }: {
   trip: Trip;
   day: Day | undefined;
@@ -215,9 +186,6 @@ function Sidebar({
   update: ReturnType<typeof useUpdateTrip>;
   activeStopId: string | null;
   setActiveStopId: (id: string) => void;
-  collapsed: boolean;
-  onTouchStart: (e: React.TouchEvent) => void;
-  onTouchEnd: (e: React.TouchEvent) => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const commutes = useCommutes(day?.stops ?? []);
@@ -316,102 +284,86 @@ function Sidebar({
 
   return (
     <aside className="flex min-h-0 flex-col border-l">
-      {/* Drag Handle - below the buttons, before stop cards */}
-      <div
-        className="shrink-0 cursor-ns-resize touch-none bg-muted/30 py-2 hover:bg-muted/50 transition-colors"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30" />
-      </div>
-
-      {/* Day Header - slides up when collapsed */}
-      <div className={`transition-all duration-300 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-96'}`}>
-        <div className="border-b p-5 overflow-hidden">
-          <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Day {dayIdx + 1}
-          </div>
-          <input
-            value={day.title}
-            onChange={(e) => {
-              const v = e.target.value;
-              update((t) => {
-                const days = t.days.slice();
-                days[dayIdx] = { ...days[dayIdx], title: v };
-                return { ...t, days };
-              });
+      <div className="border-b p-5 overflow-hidden">
+        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Day {dayIdx + 1}
+        </div>
+        <input
+          value={day.title}
+          onChange={(e) => {
+            const v = e.target.value;
+            update((t) => {
+              const days = t.days.slice();
+              days[dayIdx] = { ...days[dayIdx], title: v };
+              return { ...t, days };
+            });
+          }}
+          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none truncate"
+        />
+        <textarea
+          value={day.summary}
+          placeholder="Add a short summary for this day…"
+          rows={2}
+          onChange={(e) => {
+            const v = e.target.value;
+            update((t) => {
+              const days = t.days.slice();
+              days[dayIdx] = { ...days[dayIdx], summary: v };
+              return { ...t, days };
+            });
+          }}
+          className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
+        />
+        <div className="mt-3 flex gap-2">
+          <a
+            href={mapsRouteUrl(day.stops)}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={day.stops.length < 2}
+            className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
+          >
+            <ExternalLink className="h-4 w-4" /> Open route
+          </a>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(formatItineraryText(day));
+              toast.success("Day copied to clipboard");
             }}
-            className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none truncate"
-          />
-          <textarea
-            value={day.summary}
-            placeholder="Add a short summary for this day…"
-            rows={2}
-            onChange={(e) => {
-              const v = e.target.value;
-              update((t) => {
-                const days = t.days.slice();
-                days[dayIdx] = { ...days[dayIdx], summary: v };
-                return { ...t, days };
-              });
-            }}
-            className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
-          />
-          <div className="mt-3 flex gap-2">
-            <a
-              href={mapsRouteUrl(day.stops)}
-              target="_blank"
-              rel="noreferrer"
-              aria-disabled={day.stops.length < 2}
-              className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
-            >
-              <ExternalLink className="h-4 w-4" /> Open route
-            </a>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                navigator.clipboard.writeText(formatItineraryText(day));
-                toast.success("Day copied to clipboard");
-              }}
-            >
-              <Copy className="mr-1 h-4 w-4" /> Copy
-            </Button>
-          </div>
+          >
+            <Copy className="mr-1 h-4 w-4" /> Copy
+          </Button>
         </div>
       </div>
 
-      {/* Stop List - also collapses */}
-      <div className={`min-h-0 flex-1 overflow-y-auto transition-all duration-300 ${collapsed ? 'hidden' : ''}`}>
-        <div className="p-5">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-              <ul className="space-y-3">
-                {day.stops.map((s, i) => (
-                  <SortableStop
-                    key={s.id}
-                    stop={s}
-                    index={i}
-                    destination={trip.destination}
-                    active={activeStopId === s.id}
-                    onSelect={() => setActiveStopId(s.id)}
-                    onChange={(patch) => updateStop(s.id, patch)}
-                    onRemove={() => removeStop(s.id)}
-                    commute={commutes[s.id]}
-                  />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
+      <div className="min-h-0 flex-1 overflow-y-auto p-5">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+            <ul className="space-y-3">
+              {day.stops.map((s, i) => (
+                <SortableStop
+                  key={s.id}
+                  stop={s}
+                  index={i}
+                  destination={trip.destination}
+                  active={activeStopId === s.id}
+                  onSelect={() => setActiveStopId(s.id)}
+                  onChange={(patch) => updateStop(s.id, patch)}
+                  onRemove={() => removeStop(s.id)}
+                  commute={commutes[s.id]}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
 
-          <div className="mt-4 space-y-2 rounded-lg border border-dashed p-3">
-            <Label className="text-xs text-muted-foreground">Add a stop</Label>
-            <PlaceSearchInput destinationHint={trip.destination} onPick={addStop} />
-          </div>
+        <div className="mt-4 space-y-2 rounded-lg border border-dashed p-3">
+          <Label className="text-xs text-muted-foreground">Add a stop</Label>
+          <PlaceSearchInput destinationHint={trip.destination} onPick={addStop} />
         </div>
       </div>
 
-      {/* Day Manager - always visible */}
       <div className="shrink-0 border-t p-3">
         <DayManager trip={trip} update={update} />
       </div>
