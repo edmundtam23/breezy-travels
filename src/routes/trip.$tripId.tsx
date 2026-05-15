@@ -139,7 +139,7 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
   const [title, setTitle] = useState(trip.title);
   useEffect(() => setTitle(trip.title), [trip.title]);
   return (
-    <header className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+    <header className="flex shrink-0 items-center justify-between border-b px-4 py-3 md:py-4">
       <div className="flex items-center gap-3">
         <Link to="/" className="rounded p-1 hover:bg-muted" aria-label="Back">
           <ArrowLeft className="h-4 w-4" />
