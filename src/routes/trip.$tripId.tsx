@@ -181,8 +181,7 @@ function Sidebar({
   update,
   activeStopId,
   setActiveStopId,
-  onScrollUp,
-  onScrollDown,
+  onToggleMap,
 }: {
   trip: Trip;
   day: Day | undefined;
