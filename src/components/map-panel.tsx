@@ -29,7 +29,7 @@ export function MapPanel({ stops, activeStopId, onSelect }: Props) {
       defaultZoom={12}
       gestureHandling="greedy"
       disableDefaultUI={false}
-      mapTypeControlOptions={{ position: ControlPosition.LEFT_BOTTOM }}
+      mapTypeControl={false}
       zoomControlOptions={{ position: ControlPosition.RIGHT_BOTTOM }}
       streetViewControlOptions={{ position: ControlPosition.RIGHT_BOTTOM }}
       fullscreenControlOptions={{ position: ControlPosition.RIGHT_TOP }}
