@@ -315,7 +315,6 @@ function Sidebar({
           className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
         />
         <div className="mt-3 flex gap-2">
-          <Button asChild="sm">
             <a
               href={mapsRouteUrl(day.stops)}
               target="_blank"
