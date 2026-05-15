@@ -74,7 +74,6 @@ function TripBuilder() {
   const navigate = useNavigate();
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
-  const [mapCollapsed, setMapCollapsed] = useState(false);
 
   if (!trip) {
     return (
@@ -98,7 +97,7 @@ function TripBuilder() {
         <Toaster />
         <Header trip={trip} update={update} />
         <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[1fr_440px]">
-          <div className={`relative transition-all duration-300 md:min-h-0 ${mapCollapsed ? "min-h-0 h-0 overflow-hidden" : "min-h-[30vh]"}`}>
+          <div className="relative min-h-[30vh]">
             <MapPanel
               stops={day?.stops ?? []}
               activeStopId={activeStopId}
@@ -128,7 +127,6 @@ function TripBuilder() {
             update={update}
             activeStopId={activeStopId}
             setActiveStopId={setActiveStopId}
-            onToggleMap={() => setMapCollapsed(prev => !prev)}
           />
         </div>
       </div>
@@ -141,7 +139,7 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
   const [title, setTitle] = useState(trip.title);
   useEffect(() => setTitle(trip.title), [trip.title]);
   return (
-    <header className="flex shrink-0 items-center justify-between border-b px-4 py-3 md:py-4">
+    <header className="flex shrink-0 items-center justify-between border-b px-4 py-3">
       <div className="flex items-center gap-3">
         <Link to="/" className="rounded p-1 hover:bg-muted" aria-label="Back">
           <ArrowLeft className="h-4 w-4" />
@@ -163,7 +161,7 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="text-left text-base font-semibold hover:underline truncate max-w-[calc(100vw-80px)]"
+            className="text-left text-base font-semibold hover:underline truncate max-w-[55vw]"
           >
             {trip.title}
           </button>
@@ -181,7 +179,6 @@ function Sidebar({
   update,
   activeStopId,
   setActiveStopId,
-  onToggleMap,
 }: {
   trip: Trip;
   day: Day | undefined;
@@ -189,7 +186,6 @@ function Sidebar({
   update: ReturnType<typeof useUpdateTrip>;
   activeStopId: string | null;
   setActiveStopId: (id: string) => void;
-  onToggleMap: () => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const commutes = useCommutes(day?.stops ?? []);
@@ -288,37 +284,22 @@ function Sidebar({
 
   return (
     <aside className="flex min-h-0 flex-col border-l">
-      <div
-        className="md:hidden flex justify-center items-center py-2 cursor-pointer border-b active:bg-muted transition-colors"
-        onClick={onToggleMap}
-      >
-        <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
-      </div>
       <div className="border-b p-5 overflow-hidden">
         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Day {dayIdx + 1}
         </div>
-        <textarea
-  value={day.title}
-  rows={1}
-  ref={(el) => {
-    if (el) {
-      el.style.height = "auto";
-      el.style.height = el.scrollHeight + "px";
-    }
-  }}
-  onChange={(e) => {
-    const v = e.target.value;
-    e.target.style.height = "auto";
-    e.target.style.height = e.target.scrollHeight + "px";
-    update((t) => {
-      const days = t.days.slice();
-      days[dayIdx] = { ...days[dayIdx], title: v };
-      return { ...t, days };
-    });
-  }}
-  className="mt-1 w-full resize-none bg-transparent text-2xl font-semibold tracking-tight focus:outline-none overflow-hidden md:overflow-x-auto md:whitespace-nowrap"
-/>
+        <input
+          value={day.title}
+          onChange={(e) => {
+            const v = e.target.value;
+            update((t) => {
+              const days = t.days.slice();
+              days[dayIdx] = { ...days[dayIdx], title: v };
+              return { ...t, days };
+            });
+          }}
+          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none truncate"
+        />
         <textarea
           value={day.summary}
           placeholder="Add a short summary for this day…"
