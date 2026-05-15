@@ -128,6 +128,8 @@ function TripBuilder() {
             update={update}
             activeStopId={activeStopId}
             setActiveStopId={setActiveStopId}
+            onScrollUp={() => setMapCollapsed(true)}
+            onScrollDown={() => setMapCollapsed(false)}
           />
         </div>
       </div>
