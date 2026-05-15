@@ -335,17 +335,6 @@ function Sidebar({
     <Copy className="mr-1 h-4 w-4" /> Copy
   </Button>
 </div>
-          <Button
-            variant="outline" size="sm"
-            onClick={() => {
-              navigator.clipboard.writeText(formatItineraryText(day));
-              toast.success("Day copied to clipboard");
-            }}
-          >
-            <Copy className="mr-1 h-4 w-4" /> Copy
-          </Button>
-        </div>
-      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
