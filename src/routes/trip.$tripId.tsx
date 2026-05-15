@@ -325,7 +325,6 @@ function Sidebar({
               <ExternalLink className="h-4 w-4" /> Open route
             </a>
           </Button>
-          </div>
           <Button
             variant="outline" size="sm"
             onClick={() => {
