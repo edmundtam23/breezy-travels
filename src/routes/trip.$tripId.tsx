@@ -291,6 +291,12 @@ function Sidebar({
         <textarea
   value={day.title}
   rows={1}
+  ref={(el) => {
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+  }}
   onChange={(e) => {
     const v = e.target.value;
     e.target.style.height = "auto";
