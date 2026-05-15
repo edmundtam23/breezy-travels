@@ -321,6 +321,7 @@ function Sidebar({
               target="_blank"
               rel="noreferrer"
               aria-disabled={day.stops.length < 2}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
             >
               <ExternalLink className="mr-1 h-4 w-4" /> Open route
             </a>
