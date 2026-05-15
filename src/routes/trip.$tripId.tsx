@@ -315,7 +315,7 @@ function Sidebar({
           className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
         />
         <div className="mt-3 flex gap-2">
-            <a
+        
               href={mapsRouteUrl(day.stops)}
               target="_blank"
               rel="noreferrer"
@@ -325,6 +325,7 @@ function Sidebar({
               <ExternalLink className="h-4 w-4" /> Open route
             </a>
           </Button>
+          </div>
           <Button
             variant="outline" size="sm"
             onClick={() => {
