@@ -74,6 +74,7 @@ function TripBuilder() {
   const navigate = useNavigate();
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
+  const [mapCollapsed, setMapCollapsed] = useState(false);
 
   if (!trip) {
     return (
@@ -97,7 +98,7 @@ function TripBuilder() {
         <Toaster />
         <Header trip={trip} update={update} />
         <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[1fr_440px]">
-          <div className="relative min-h-[30vh]">
+          <div className={`relative transition-all duration-300 md:min-h-0 ${mapCollapsed ? "min-h-0 h-0 overflow-hidden" : "min-h-[30vh]"}`}>
             <MapPanel
               stops={day?.stops ?? []}
               activeStopId={activeStopId}
