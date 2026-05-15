@@ -161,7 +161,7 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="text-left text-base font-semibold hover:underline"
+            className="text-left text-base font-semibold hover:underline truncate max-w-[55vw]"
           >
             {trip.title}
           </button>
@@ -314,27 +314,28 @@ function Sidebar({
           }}
           className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
         />
-<div className="mt-3 flex gap-2">
-  
-    href={mapsRouteUrl(day.stops)}
-    target="_blank"
-    rel="noreferrer"
-    aria-disabled={day.stops.length < 2}
-    className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
-  >
-    <ExternalLink className="h-4 w-4" /> Open route
-  </a>
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => {
-      navigator.clipboard.writeText(formatItineraryText(day));
-      toast.success("Day copied to clipboard");
-    }}
-  >
-    <Copy className="mr-1 h-4 w-4" /> Copy
-  </Button>
-</div>
+        <div className="mt-3 flex gap-2">
+          <a
+            href={mapsRouteUrl(day.stops)}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={day.stops.length < 2}
+            className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
+          >
+            <ExternalLink className="h-4 w-4" /> Open route
+          </a>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(formatItineraryText(day));
+              toast.success("Day copied to clipboard");
+            }}
+          >
+            <Copy className="mr-1 h-4 w-4" /> Copy
+          </Button>
+        </div>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -422,7 +423,6 @@ function SortableStop({
 
           <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
             {stop.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={stop.photoUrl} alt={stop.name} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
