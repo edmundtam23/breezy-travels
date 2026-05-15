@@ -97,7 +97,7 @@ function TripBuilder() {
         <Toaster />
         <Header trip={trip} update={update} />
         <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[1fr_440px]">
-          <div className="relative min-h-[40vh]">
+          <div className="relative min-h-[30vh]">
             <MapPanel
               stops={day?.stops ?? []}
               activeStopId={activeStopId}
