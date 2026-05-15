@@ -284,7 +284,7 @@ function Sidebar({
 
   return (
     <aside className="flex min-h-0 flex-col border-l">
-      <div className="border-b p-5">
+      <div className="border-b p-5 overflow-hidden">
         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Day {dayIdx + 1}
         </div>
@@ -298,7 +298,7 @@ function Sidebar({
               return { ...t, days };
             });
           }}
-          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none"
+          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none truncate"
         />
         <textarea
           value={day.summary}
