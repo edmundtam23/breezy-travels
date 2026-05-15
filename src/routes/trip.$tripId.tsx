@@ -288,18 +288,21 @@ function Sidebar({
         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Day {dayIdx + 1}
         </div>
-        <input
-          value={day.title}
-          onChange={(e) => {
-            const v = e.target.value;
-            update((t) => {
-              const days = t.days.slice();
-              days[dayIdx] = { ...days[dayIdx], title: v };
-              return { ...t, days };
-            });
-          }}
-          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none break-words"
-        />
+        <textarea
+  value={day.title}
+  rows={1}
+  onChange={(e) => {
+    const v = e.target.value;
+    e.target.style.height = "auto";
+    e.target.style.height = e.target.scrollHeight + "px";
+    update((t) => {
+      const days = t.days.slice();
+      days[dayIdx] = { ...days[dayIdx], title: v };
+      return { ...t, days };
+    });
+  }}
+  className="mt-1 w-full resize-none overflow-hidden bg-transparent text-2xl font-semibold tracking-tight focus:outline-none"
+/>
         <textarea
           value={day.summary}
           placeholder="Add a short summary for this day…"
