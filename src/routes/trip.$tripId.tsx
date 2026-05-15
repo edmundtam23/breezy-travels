@@ -351,15 +351,7 @@ function Sidebar({
         </div>
       </div>
 
-      <div
-        className="min-h-0 flex-1 overflow-y-auto p-5"
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          const scrollingUp = el.scrollTop > 10;
-          if (scrollingUp) onScrollUp();
-          else onScrollDown();
-        }}
-      >
+      <div className="min-h-0 flex-1 overflow-y-auto p-5">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
             <ul className="space-y-3">
