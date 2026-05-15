@@ -314,17 +314,27 @@ function Sidebar({
           }}
           className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
         />
-        <div className="mt-3 flex gap-2">
-        
-              href={mapsRouteUrl(day.stops)}
-              target="_blank"
-              rel="noreferrer"
-              aria-disabled={day.stops.length < 2}
-              className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
-            >
-              <ExternalLink className="h-4 w-4" /> Open route
-            </a>
-          </Button>
+<div className="mt-3 flex gap-2">
+  
+    href={mapsRouteUrl(day.stops)}
+    target="_blank"
+    rel="noreferrer"
+    aria-disabled={day.stops.length < 2}
+    className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
+  >
+    <ExternalLink className="h-4 w-4" /> Open route
+  </a>
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => {
+      navigator.clipboard.writeText(formatItineraryText(day));
+      toast.success("Day copied to clipboard");
+    }}
+  >
+    <Copy className="mr-1 h-4 w-4" /> Copy
+  </Button>
+</div>
           <Button
             variant="outline" size="sm"
             onClick={() => {
