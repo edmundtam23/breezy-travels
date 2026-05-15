@@ -190,8 +190,7 @@ function Sidebar({
   update: ReturnType<typeof useUpdateTrip>;
   activeStopId: string | null;
   setActiveStopId: (id: string) => void;
-  onScrollUp: () => void;
-  onScrollDown: () => void;
+  onToggleMap: () => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const commutes = useCommutes(day?.stops ?? []);
