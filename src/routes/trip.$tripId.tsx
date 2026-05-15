@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -74,6 +74,8 @@ function TripBuilder() {
   const navigate = useNavigate();
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
+  // Single collapsed state controls both map and day header on mobile
+  const [collapsed, setCollapsed] = useState(false);
 
   if (!trip) {
     return (
@@ -97,7 +99,12 @@ function TripBuilder() {
         <Toaster />
         <Header trip={trip} update={update} />
         <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[1fr_440px]">
-          <div className="relative min-h-[30vh]">
+          {/* Map — collapses on mobile when collapsed=true */}
+          <div
+            className={`relative transition-all duration-300 md:min-h-0 ${
+              collapsed ? "min-h-0 h-0 overflow-hidden" : "min-h-[30vh]"
+            }`}
+          >
             <MapPanel
               stops={day?.stops ?? []}
               activeStopId={activeStopId}
@@ -127,6 +134,8 @@ function TripBuilder() {
             update={update}
             activeStopId={activeStopId}
             setActiveStopId={setActiveStopId}
+            collapsed={collapsed}
+            onToggle={(val) => setCollapsed(val)}
           />
         </div>
       </div>
@@ -139,7 +148,7 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
   const [title, setTitle] = useState(trip.title);
   useEffect(() => setTitle(trip.title), [trip.title]);
   return (
-    <header className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+    <header className="flex shrink-0 items-center justify-between border-b px-4 py-3 md:py-4">
       <div className="flex items-center gap-3">
         <Link to="/" className="rounded p-1 hover:bg-muted" aria-label="Back">
           <ArrowLeft className="h-4 w-4" />
@@ -161,7 +170,7 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="text-left text-base font-semibold hover:underline truncate max-w-[55vw]"
+            className="text-left text-base font-semibold hover:underline truncate max-w-[calc(100vw-80px)]"
           >
             {trip.title}
           </button>
@@ -179,6 +188,8 @@ function Sidebar({
   update,
   activeStopId,
   setActiveStopId,
+  collapsed,
+  onToggle,
 }: {
   trip: Trip;
   day: Day | undefined;
@@ -186,9 +197,27 @@ function Sidebar({
   update: ReturnType<typeof useUpdateTrip>;
   activeStopId: string | null;
   setActiveStopId: (id: string) => void;
+  collapsed: boolean;
+  onToggle: (val: boolean) => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const commutes = useCommutes(day?.stops ?? []);
+
+  // Track touch start Y for drag gesture on handle
+  const touchStartY = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const deltaY = touchStartY.current - e.changedTouches[0].clientY;
+    // Drag up 80px+ collapses, drag down 80px+ expands
+    if (deltaY > 80) onToggle(true);
+    else if (deltaY < -80) onToggle(false);
+    touchStartY.current = null;
+  };
 
   if (!day) {
     return (
@@ -284,57 +313,84 @@ function Sidebar({
 
   return (
     <aside className="flex min-h-0 flex-col border-l">
-      <div className="border-b p-5 overflow-hidden">
-        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Day {dayIdx + 1}
-        </div>
-        <input
-          value={day.title}
-          onChange={(e) => {
-            const v = e.target.value;
-            update((t) => {
-              const days = t.days.slice();
-              days[dayIdx] = { ...days[dayIdx], title: v };
-              return { ...t, days };
-            });
-          }}
-          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none truncate"
-        />
-        <textarea
-          value={day.summary}
-          placeholder="Add a short summary for this day…"
-          rows={2}
-          onChange={(e) => {
-            const v = e.target.value;
-            update((t) => {
-              const days = t.days.slice();
-              days[dayIdx] = { ...days[dayIdx], summary: v };
-              return { ...t, days };
-            });
-          }}
-          className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
-        />
-        <div className="mt-3 flex gap-2">
-          <a
-            href={mapsRouteUrl(day.stops)}
-            target="_blank"
-            rel="noreferrer"
-            aria-disabled={day.stops.length < 2}
-            className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
-          >
-            <ExternalLink className="h-4 w-4" /> Open route
-          </a>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              navigator.clipboard.writeText(formatItineraryText(day));
-              toast.success("Day copied to clipboard");
+
+      {/* Day header — slides up and hides on mobile when collapsed */}
+      <div
+        className={`transition-all duration-300 overflow-hidden md:block ${
+          collapsed ? "max-h-0" : "max-h-96"
+        }`}
+      >
+        <div className="border-b p-5 overflow-hidden">
+          <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Day {dayIdx + 1}
+          </div>
+          <textarea
+            value={day.title}
+            rows={1}
+            ref={(el) => {
+              if (el) {
+                el.style.height = "auto";
+                el.style.height = el.scrollHeight + "px";
+              }
             }}
-          >
-            <Copy className="mr-1 h-4 w-4" /> Copy
-          </Button>
+            onChange={(e) => {
+              const v = e.target.value;
+              e.target.style.height = "auto";
+              e.target.style.height = e.target.scrollHeight + "px";
+              update((t) => {
+                const days = t.days.slice();
+                days[dayIdx] = { ...days[dayIdx], title: v };
+                return { ...t, days };
+              });
+            }}
+            className="mt-1 w-full resize-none bg-transparent text-2xl font-semibold tracking-tight focus:outline-none overflow-hidden md:overflow-x-auto md:whitespace-nowrap"
+          />
+          <textarea
+            value={day.summary}
+            placeholder="Add a short summary for this day…"
+            rows={2}
+            onChange={(e) => {
+              const v = e.target.value;
+              update((t) => {
+                const days = t.days.slice();
+                days[dayIdx] = { ...days[dayIdx], summary: v };
+                return { ...t, days };
+              });
+            }}
+            className="mt-2 w-full resize-none bg-transparent text-sm text-muted-foreground focus:outline-none"
+          />
+          <div className="mt-3 flex gap-2">
+            <a
+              href={mapsRouteUrl(day.stops)}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={day.stops.length < 2}
+              className="inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
+            >
+              <ExternalLink className="h-4 w-4" /> Open route
+            </a>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(formatItineraryText(day));
+                toast.success("Day copied to clipboard");
+              }}
+            >
+              <Copy className="mr-1 h-4 w-4" /> Copy
+            </Button>
+          </div>
         </div>
+      </div>
+
+      {/* Drag handle — only on mobile, between day header and stop cards.
+          Drag up 80px to collapse map + header, drag down 80px to expand. */}
+      <div
+        className="md:hidden flex justify-center items-center py-3 cursor-grab active:cursor-grabbing active:bg-muted transition-colors touch-none select-none"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
