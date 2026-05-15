@@ -298,7 +298,7 @@ function Sidebar({
               return { ...t, days };
             });
           }}
-          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none"
+          className="mt-1 w-full bg-transparent text-2xl font-semibold tracking-tight focus:outline-none break-words"
         />
         <textarea
           value={day.summary}
