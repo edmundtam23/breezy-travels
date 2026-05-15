@@ -109,7 +109,7 @@ function TripBuilder() {
                   value={String(safeDayIdx)}
                   onValueChange={(v) => setActiveDayIdx(Number(v))}
                 >
-                  <TabsList className="bg-background/95 shadow-md backdrop-blur">
+                  <TabsList className="bg-background/95 shadow-md backdrop-blur flex-nowrap overflow-x-auto max-w-[calc(100vw-2rem)]">
                     {trip.days.map((d, i) => (
                       <TabsTrigger key={d.id} value={String(i)}>
                         Day {i + 1}
