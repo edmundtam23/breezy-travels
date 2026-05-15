@@ -289,6 +289,12 @@ function Sidebar({
 
   return (
     <aside className="flex min-h-0 flex-col border-l">
+      <div
+        className="md:hidden flex justify-center items-center py-2 cursor-pointer border-b active:bg-muted transition-colors"
+        onClick={onToggleMap}
+      >
+        <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
+      </div>
       <div className="border-b p-5 overflow-hidden">
         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Day {dayIdx + 1}
