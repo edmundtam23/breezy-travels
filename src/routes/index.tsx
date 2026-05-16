@@ -341,7 +341,7 @@ function NewTripDialog() {
             </div>
             <div className="space-y-2">
               <Label>Trip focus</Label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 sm:justify-between">
                 {FOCUS_OPTIONS.map((option) => (
                   <button
                     key={option.value}
