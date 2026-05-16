@@ -226,7 +226,6 @@ function NewTripDialog() {
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
   const [loading, setLoading] = useState(false);
-  // Focus defaults to "mix" — the most balanced option
   const [focus, setFocus] = useState<FocusValue>("mix");
   const navigate = useNavigate();
   const aiFn = useServerFn(generateItinerary);
@@ -246,11 +245,8 @@ function NewTripDialog() {
       return;
     }
     const numDays = Number(days) || 1;
-
-    // Append the focus prompt snippet to the user's prompt
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
-
     setLoading(true);
     try {
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays } });
@@ -343,28 +339,25 @@ function NewTripDialog() {
                 onChange={(e) => setPrompt(e.target.value)}
               />
             </div>
-
-            {/* Trip focus pill selector */}
-                <div className="space-y-2">
-                  <Label>Trip focus</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {FOCUS_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setFocus(option.value)}
-                        className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
-                          focus === option.value
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
+            <div className="space-y-2">
+              <Label>Trip focus</Label>
+              <div className="flex flex-wrap gap-2">
+                {FOCUS_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFocus(option.value)}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                      focus === option.value
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="days-ai">Days</Label>
               <Input
