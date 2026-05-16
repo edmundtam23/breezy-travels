@@ -316,7 +316,7 @@ function NewTripDialog() {
           <Plus className="mr-1 h-4 w-4" /> New trip
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>New trip</DialogTitle>
           <DialogDescription>Generate a draft with AI or start blank.</DialogDescription>
