@@ -364,22 +364,6 @@ function NewTripDialog() {
                     ))}
                   </div>
                 </div>
-                {FOCUS_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setFocus(option.value)}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
-                      focus === option.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="days-ai">Days</Label>
