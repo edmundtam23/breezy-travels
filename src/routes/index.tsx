@@ -345,23 +345,25 @@ function NewTripDialog() {
             </div>
 
             {/* Trip focus pill selector */}
-            <div className="space-y-2">
-              <Label>Trip focus</Label>
-              <div className="flex flex-wrap gap-2 md:flex-nowrap md:overflow-hidden">
-                {FOCUS_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setFocus(option.value)}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap min-w-0 md:flex-1 ${
-                      focus === option.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+                <div className="space-y-2">
+                  <Label>Trip focus</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {FOCUS_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFocus(option.value)}
+                        className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                          focus === option.value
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {FOCUS_OPTIONS.map((option) => (
                   <button
                     key={option.value}
