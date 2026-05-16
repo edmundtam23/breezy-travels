@@ -40,6 +40,42 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+// Focus options — each maps to a prompt snippet appended to the user's prompt
+const FOCUS_OPTIONS = [
+  {
+    value: "food",
+    label: "🍜 Food",
+    prompt:
+      "Prioritize highly-rated local restaurants, food markets, street food, cafes, and unique dining experiences. Avoid generic tourist traps.",
+  },
+  {
+    value: "sights",
+    label: "🏛 Sights",
+    prompt:
+      "Focus on iconic landmarks, museums, historical sites, and must-see attractions. Include context about each location's significance.",
+  },
+  {
+    value: "outdoors",
+    label: "🌿 Outdoors",
+    prompt:
+      "Prioritize parks, hiking trails, beaches, nature reserves, and outdoor activities. Include practical tips like best times to visit.",
+  },
+  {
+    value: "culture",
+    label: "🎨 Culture",
+    prompt:
+      "Focus on art galleries, theatres, local neighbourhoods, street art, live music venues, and authentic cultural experiences.",
+  },
+  {
+    value: "mix",
+    label: "✨ Mix",
+    prompt:
+      "Create a balanced mix of food, sightseeing, culture, and outdoor experiences for a well-rounded itinerary.",
+  },
+] as const;
+
+type FocusValue = (typeof FOCUS_OPTIONS)[number]["value"];
+
 function useCurrentUser() {
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => {
@@ -190,6 +226,8 @@ function NewTripDialog() {
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
   const [loading, setLoading] = useState(false);
+  // Focus defaults to "mix" — the most balanced option
+  const [focus, setFocus] = useState<FocusValue>("mix");
   const navigate = useNavigate();
   const aiFn = useServerFn(generateItinerary);
 
@@ -199,6 +237,7 @@ function NewTripDialog() {
     setTitle("");
     setDestination("");
     setLoading(false);
+    setFocus("mix");
   };
 
   const handleAi = async () => {
@@ -207,9 +246,14 @@ function NewTripDialog() {
       return;
     }
     const numDays = Number(days) || 1;
+
+    // Append the focus prompt snippet to the user's prompt
+    const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
+    const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
+
     setLoading(true);
     try {
-      const res = await aiFn({ data: { prompt: prompt.trim(), days: numDays } });
+      const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays } });
       const trip: Trip = {
         id: newId(),
         title: res.title,
@@ -299,6 +343,28 @@ function NewTripDialog() {
                 onChange={(e) => setPrompt(e.target.value)}
               />
             </div>
+
+            {/* Trip focus pill selector */}
+            <div className="space-y-2">
+              <Label>Trip focus</Label>
+              <div className="flex flex-wrap gap-2 md:flex-nowrap">
+                {FOCUS_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFocus(option.value)}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                      focus === option.value
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="days-ai">Days</Label>
               <Input
@@ -308,11 +374,11 @@ function NewTripDialog() {
                 max={14}
                 value={days}
                 onChange={(e) => {
-    let value = e.target.value === "" ? "" : Number(e.target.value);
-    if (typeof value === "number" && value > 14) value = 14;
-    if (typeof value === "number" && value < 1) value = 1;
-    setDays(value);
-  }}
+                  let value = e.target.value === "" ? "" : Number(e.target.value);
+                  if (typeof value === "number" && value > 14) value = 14;
+                  if (typeof value === "number" && value < 1) value = 1;
+                  setDays(value);
+                }}
                 onFocus={(e) => e.target.select()}
               />
             </div>
@@ -350,11 +416,11 @@ function NewTripDialog() {
                 max={14}
                 value={days}
                 onChange={(e) => {
-    let value = e.target.value === "" ? "" : Number(e.target.value);
-    if (typeof value === "number" && value > 14) value = 14;
-    if (typeof value === "number" && value < 1) value = 1;
-    setDays(value);
-  }}
+                  let value = e.target.value === "" ? "" : Number(e.target.value);
+                  if (typeof value === "number" && value > 14) value = 14;
+                  if (typeof value === "number" && value < 1) value = 1;
+                  setDays(value);
+                }}
                 onFocus={(e) => e.target.select()}
               />
             </div>
