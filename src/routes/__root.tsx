@@ -13,6 +13,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { signOut } from "../lib/auth";
 import { Button } from "@/components/ui/button";
+import { themeScript } from "../lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -114,60 +115,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Inline script runs before paint to prevent dark mode flash */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
         {children}
         <Scripts />
       </body>
     </html>
-  );
-}
-
-function AuthNav() {
-  const [user, setUser] = useState<User | null>(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
-    });
-
-    // Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate({ to: "/login" });
-  };
-
-  if (user) {
-    return (
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-muted-foreground hidden sm:block">
-          {user.email}
-        </span>
-        <Button variant="outline" size="sm" onClick={handleSignOut}>
-          Sign out
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <Link to="/login">
-        <Button variant="outline" size="sm">Sign in</Button>
-      </Link>
-      <Link to="/signup">
-        <Button size="sm">Sign up</Button>
-      </Link>
-    </div>
   );
 }
 
