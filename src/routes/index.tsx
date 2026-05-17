@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Plus, Sparkles, Trash2, Calendar } from "lucide-react";
+import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,6 +23,7 @@ import { useTrips, saveTrip, deleteTrip, newId } from "@/lib/storage";
 import { generateItinerary } from "@/lib/itinerary.functions";
 import { supabase } from "@/lib/supabase";
 import { signOut } from "@/lib/auth";
+import { getTheme, setTheme, nextTheme, type Theme } from "@/lib/theme";
 import type { User } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
 
@@ -40,7 +41,6 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-// Focus options — each maps to a prompt snippet appended to the user's prompt
 const FOCUS_OPTIONS = [
   {
     value: "food",
@@ -88,6 +88,50 @@ function useCurrentUser() {
   return user;
 }
 
+// Theme toggle icon — shows the CURRENT mode so user knows what they're on
+function ThemeIcon({ theme }: { theme: Theme }) {
+  if (theme === "light") return <Sun className="h-4 w-4" />;
+  if (theme === "dark") return <Moon className="h-4 w-4" />;
+  return <Monitor className="h-4 w-4" />;
+}
+
+function ThemeToggle() {
+  const [theme, setThemeState] = useState<Theme>("system");
+
+  useEffect(() => {
+    setThemeState(getTheme());
+  }, []);
+
+  // Also listen for system preference changes when in system mode
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => setTheme("system");
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [theme]);
+
+  const handleClick = () => {
+    const next = nextTheme(theme);
+    setTheme(next);
+    setThemeState(next);
+  };
+
+  const label =
+    theme === "light" ? "Light mode" : theme === "dark" ? "Dark mode" : "System mode";
+
+  return (
+    <button
+      onClick={handleClick}
+      aria-label={`Current: ${label}. Click to switch.`}
+      title={label}
+      className="rounded p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      <ThemeIcon theme={theme} />
+    </button>
+  );
+}
+
 function HomePage() {
   const trips = useTrips();
   const user = useCurrentUser();
@@ -127,6 +171,7 @@ function HomePage() {
                 </Link>
               </>
             )}
+            <ThemeToggle />
             <NewTripDialog />
           </div>
         </div>
