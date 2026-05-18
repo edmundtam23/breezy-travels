@@ -7,7 +7,15 @@
   "vars": {
     "VITE_SUPABASE_URL": "https://omgskkzbxdezbapddzyw.supabase.co/rest/v1/",
     "VITE_SUPABASE_ANON_KEY": "sb_publishable_fpqkHAQB9EpHprRNJwDbcw_jdFw45-U"
+  },
+  "env": {
+    "preview": {
+      "name": "breezy-travels-preview",
+      "vars": {
+        "VITE_SUPABASE_URL": "https://omgskkzbxdezbapddzyw.supabase.co/rest/v1/",
+        "VITE_SUPABASE_ANON_KEY": "sb_publishable_fpqkHAQB9EpHprRNJwDbcw_jdFw45-U"
+      }
+    }
   }
 }
-
 // rebuild
