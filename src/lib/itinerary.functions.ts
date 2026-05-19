@@ -126,7 +126,9 @@ export const generateItinerary = createServerFn({ method: "POST" })
 
       const text = res.text;
       if (!text) throw new Error("No itinerary generated");
-      const parsed = ItinerarySchema.parse(JSON.parse(text));
+      const raw = JSON.parse(text);
+      console.log("GEMINI STOP SAMPLE:", JSON.stringify(raw.days?.[0]?.stops?.[0]));
+      const parsed = ItinerarySchema.parse(raw);
       return parsed;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
