@@ -14,6 +14,7 @@ export interface Stop {
   rating?: number;
   reviewCount?: number;
   photoUrl?: string;
+  visitTip?: string | null;
   travelModeToNext: TravelMode;
 }
 
