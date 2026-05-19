@@ -40,14 +40,17 @@ async function fetchTripsFromSupabase(): Promise<Trip[]> {
     console.error("Error fetching trips:", error);
     return [];
   }
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    destination: row.destination,
-    days: row.days,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
+return (data ?? []).map((row) => {
+    console.log("SUPABASE STOP SAMPLE:", JSON.stringify(row.days?.[0]?.stops?.[0]));
+    return {
+      id: row.id,
+      title: row.title,
+      destination: row.destination,
+      days: row.days,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  });
 }
  
 async function saveTripToSupabase(trip: Trip): Promise<void> {
