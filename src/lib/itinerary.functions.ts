@@ -29,6 +29,7 @@ const StopSchema = z.object({
   time: z.string(),
   durationMin: z.number().default(60),
   blurb: z.string(),
+  visitTip: z.string().nullable().optional().default(null),
   category: z.string().optional().default(""),
   travelModeToNext: z.enum(["WALKING", "DRIVING", "TRANSIT"]).default("DRIVING"),
 });
@@ -66,7 +67,7 @@ export const generateItinerary = createServerFn({ method: "POST" })
             role: "user",
             parts: [
               {
-                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise).`,
+                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise). For each stop, set visitTip to a single sentence covering one of: whether reservations or tickets should be booked in advance, whether long queues are common and when to avoid them, or the best time of day to visit. Set visitTip to null if none of these apply.`,
               },
             ],
           },
@@ -103,6 +104,10 @@ export const generateItinerary = createServerFn({ method: "POST" })
                           travelModeToNext: {
                             type: Type.STRING,
                             enum: ["WALKING", "DRIVING", "TRANSIT"],
+                          },
+                          visitTip: {
+                            type: Type.STRING,
+                            nullable: true,
                           },
                         },
                         required: ["name", "lat", "lng", "time", "durationMin", "blurb"],
