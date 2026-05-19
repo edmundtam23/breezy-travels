@@ -29,7 +29,7 @@ const StopSchema = z.object({
   time: z.string(),
   durationMin: z.number().default(60),
   blurb: z.string(),
-  visitTip: z.string().nullable().optional().default(null),
+  visitTip: z.string().nullable().optional().catch(null),
   category: z.string().optional().default(""),
   travelModeToNext: z.enum(["WALKING", "DRIVING", "TRANSIT"]).default("DRIVING"),
 });
@@ -108,6 +108,7 @@ export const generateItinerary = createServerFn({ method: "POST" })
                           visitTip: {
                             type: Type.STRING,
                             nullable: true,
+                            description: "One sentence tip about reservations, queues, or best time to visit. Omit if not applicable.",
                           },
                         },
                         required: ["name", "lat", "lng", "time", "durationMin", "blurb"],
