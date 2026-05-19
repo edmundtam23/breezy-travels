@@ -512,8 +512,8 @@ function SortableStop({
               <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{stop.blurb}</p>
             )}
             {stop.visitTip && (
-              <div className="mt-1.5 flex items-start gap-1.5 rounded-md bg-amber-50 dark:bg-amber-950/30 px-2 py-1.5 text-xs text-amber-800 dark:text-amber-300">
-                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+              <div style={{marginTop: "6px", display: "flex", alignItems: "flex-start", gap: "6px", borderRadius: "6px", background: "#fffbeb", padding: "6px 8px", fontSize: "12px", color: "#92400e"}}>
+                <AlertTriangle style={{marginTop: "2px", height: "12px", width: "12px", flexShrink: 0}} />
                 <span>{stop.visitTip}</span>
               </div>
             )}
