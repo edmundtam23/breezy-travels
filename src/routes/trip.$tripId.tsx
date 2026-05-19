@@ -29,6 +29,7 @@ import {
   ExternalLink,
   Footprints,
   GripVertical,
+  Lightbulb,
   MapPin,
   Plus,
   Sparkles,
@@ -513,7 +514,7 @@ function SortableStop({
             )}
             {stop.visitTip && (
               <div style={{marginTop: "6px", display: "flex", alignItems: "flex-start", gap: "6px", borderRadius: "6px", background: "#fffbeb", padding: "6px 8px", fontSize: "12px", color: "#92400e"}}>
-                <AlertTriangle style={{marginTop: "2px", height: "12px", width: "12px", flexShrink: 0}} />
+                <Lightbulb style={{marginTop: "2px", height: "12px", width: "12px", flexShrink: 0}} />
                 <span>{stop.visitTip}</span>
               </div>
             )}
