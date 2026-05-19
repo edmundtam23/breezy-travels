@@ -312,6 +312,7 @@ function NewTripDialog() {
             time: s.time,
             durationMin: s.durationMin,
             blurb: s.blurb,
+            visitTip: s.visitTip ?? null,
             category: s.category,
             travelModeToNext: s.travelModeToNext,
           })),
