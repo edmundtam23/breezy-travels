@@ -5,12 +5,10 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
 
-  },
   "env": {
     "preview": {
       "name": "breezy-travels-preview",
       }
     }
   }
-}
 // rebuild
