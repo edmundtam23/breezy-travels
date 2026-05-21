@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 
 function readEnv(name: string): string | undefined {
   const g = globalThis as unknown as Record<string, unknown> & {
@@ -15,8 +16,22 @@ function readEnv(name: string): string | undefined {
   return undefined;
 }
 
+// Verify the request carries a valid Supabase session.
+// Throws a 401-style error if the user is not authenticated.
+async function requireAuth() {
+  const url = readEnv("VITE_SUPABASE_URL") ?? "";
+  const key = readEnv("VITE_SUPABASE_ANON_KEY") ?? "";
+  const client = createClient(url, key);
+  const { data, error } = await client.auth.getUser();
+  if (error || !data.user) {
+    throw new Error("Unauthorized: you must be signed in to use this feature.");
+  }
+  return data.user;
+}
+
 export const getMapsApiKey = createServerFn({ method: "GET" })
   .handler(async () => {
+    await requireAuth();
     const key = readEnv("GOOGLE_MAPS_API_KEY") ?? "";
     return { key };
   });
@@ -54,9 +69,20 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
+const GenerateItineraryInput = z.object({
+  prompt: z.string().min(1).max(500).trim(),
+  days: z.number().int().min(1).max(14),
+});
+
+const GenerateBlurbInput = z.object({
+  name: z.string().min(1).max(200).trim(),
+  destination: z.string().max(200).trim().optional(),
+});
+
 export const generateItinerary = createServerFn({ method: "POST" })
-  .inputValidator((d: { prompt: string; days: number }) => d)
+  .inputValidator((d: { prompt: string; days: number }) => GenerateItineraryInput.parse(d))
   .handler(async ({ data }) => {
+    await requireAuth();
     const ai = getClient();
 
     try {
@@ -140,8 +166,9 @@ return parsed;
   });
 
 export const generateBlurb = createServerFn({ method: "POST" })
-  .inputValidator((d: { name: string; destination?: string }) => d)
+  .inputValidator((d: { name: string; destination?: string }) => GenerateBlurbInput.parse(d))
   .handler(async ({ data }) => {
+    await requireAuth();
     const ai = getClient();
     const res = await ai.models.generateContent({
       model: MODEL,
