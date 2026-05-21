@@ -129,6 +129,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  // Handle OAuth redirects (e.g. Google sign-in).
+  // Supabase returns the session token in the URL hash after OAuth.
+  // Calling getSession() on mount detects it, exchanges the token,
+  // and persists the session — without this the user lands logged-out.
+  useEffect(() => {
+    supabase.auth.getSession();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
