@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/lib/supabase";
 import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -294,7 +295,20 @@ function NewTripDialog() {
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
     setLoading(true);
     try {
+      // Inject the auth token into the server function request so requireAuth()
+      // can validate the session server-side.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const origFetch = window.fetch;
+      if (token) {
+        window.fetch = (input, init = {}) => {
+          const headers = new Headers((init as RequestInit).headers);
+          headers.set("Authorization", `Bearer ${token}`);
+          return origFetch(input, { ...(init as RequestInit), headers });
+        };
+      }
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays } });
+      window.fetch = origFetch;
       const trip: Trip = {
         id: newId(),
         title: res.title,
