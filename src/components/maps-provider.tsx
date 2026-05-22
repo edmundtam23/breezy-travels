@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { getMapsApiKey } from "@/lib/itinerary.functions";
+import { supabase } from "@/lib/supabase";
 
 let cachedKey: string | null = null;
 let pending: Promise<string> | null = null;
@@ -28,7 +29,22 @@ export function MapsProvider({ children }: { children: React.ReactNode }) {
   const [key, setKey] = useState<string | null>(cachedKey);
 
   useEffect(() => {
-    loadKey(fn).then(setKey).catch(() => setKey(""));
+    // Get the current session token and inject it into the server fn call
+    // so requireAuth() on the server can validate the request.
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token;
+      if (!token) { setKey(""); return; }
+      // Temporarily patch fetch to inject Authorization header for this call
+      const origFetch = window.fetch;
+      window.fetch = (input, init = {}) => {
+        const headers = new Headers(init.headers);
+        headers.set("Authorization", `Bearer ${token}`);
+        return origFetch(input, { ...init, headers });
+      };
+      loadKey(fn).then(setKey).catch(() => setKey("")).finally(() => {
+        window.fetch = origFetch;
+      });
+    });
   }, [fn]);
 
   if (key === null) {

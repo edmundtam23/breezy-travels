@@ -72,6 +72,8 @@ export default {
       // Expose Cloudflare Worker env bindings (secrets/vars) to server functions.
       // In Workers, env is passed per-request and is NOT on process.env or globalThis by default.
       (globalThis as unknown as { __env?: unknown }).__env = env;
+      // Store the current request so server functions can read headers (e.g. Authorization).
+      (globalThis as unknown as { __request?: Request }).__request = request;
       if (env && typeof env === "object") {
         for (const [k, v] of Object.entries(env as Record<string, unknown>)) {
           if (typeof v === "string") {
