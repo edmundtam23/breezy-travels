@@ -660,19 +660,10 @@ function EditPopover({
                 onClick={async () => {
                   setBusy(true);
                   try {
-                    // Inject auth token so requireAuth() can validate server-side.
+                    // Pass token in data payload so requireAuth() can validate server-side.
                     const { data: sessionData } = await supabase.auth.getSession();
-                    const token = sessionData.session?.access_token;
-                    const origFetch = window.fetch;
-                    if (token) {
-                      window.fetch = (input, init = {}) => {
-                        const headers = new Headers((init as RequestInit).headers);
-                        headers.set("Authorization", `Bearer ${token}`);
-                        return origFetch(input, { ...(init as RequestInit), headers });
-                      };
-                    }
-                    const r = await aiBlurb({ data: { name: stop.name, destination } });
-                    window.fetch = origFetch;
+                    const token = sessionData.session?.access_token ?? "";
+                    const r = await aiBlurb({ data: { name: stop.name, destination, token } });
                     setBlurb(r.blurb);
                     onChange({ blurb: r.blurb });
                   } catch (e) {
