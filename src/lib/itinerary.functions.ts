@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
-import { getHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 
 function readEnv(name: string): string | undefined {
@@ -18,12 +17,15 @@ function readEnv(name: string): string | undefined {
 }
 
 // Verify the request carries a valid Supabase session.
-// We extract the Authorization header forwarded by TanStack Start
-// and pass it to a fresh Supabase client so the server can validate it.
+// TanStack Start stores the current request on globalThis.__request
+// so we can extract the Authorization header from it server-side.
 async function requireAuth() {
   const url = readEnv("VITE_SUPABASE_URL") ?? "";
   const key = readEnv("VITE_SUPABASE_ANON_KEY") ?? "";
-  const authHeader = getHeader("authorization") ?? "";
+
+  // Extract Bearer token from the incoming request headers
+  const g = globalThis as unknown as { __request?: Request };
+  const authHeader = g.__request?.headers?.get("authorization") ?? "";
   const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
 
   if (!accessToken) {
