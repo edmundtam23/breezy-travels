@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
+import { getHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 
 function readEnv(name: string): string | undefined {
@@ -17,12 +18,22 @@ function readEnv(name: string): string | undefined {
 }
 
 // Verify the request carries a valid Supabase session.
-// Throws a 401-style error if the user is not authenticated.
+// We extract the Authorization header forwarded by TanStack Start
+// and pass it to a fresh Supabase client so the server can validate it.
 async function requireAuth() {
   const url = readEnv("VITE_SUPABASE_URL") ?? "";
   const key = readEnv("VITE_SUPABASE_ANON_KEY") ?? "";
-  const client = createClient(url, key);
-  const { data, error } = await client.auth.getUser();
+  const authHeader = getHeader("authorization") ?? "";
+  const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+  if (!accessToken) {
+    throw new Error("Unauthorized: you must be signed in to use this feature.");
+  }
+
+  const client = createClient(url, key, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+  const { data, error } = await client.auth.getUser(accessToken);
   if (error || !data.user) {
     throw new Error("Unauthorized: you must be signed in to use this feature.");
   }
