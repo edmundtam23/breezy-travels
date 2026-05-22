@@ -7,11 +7,17 @@ let cachedKey: string | null = null;
 let pending: Promise<string> | null = null;
 
 function loadKey(fn: () => Promise<{ key: string }>) {
-  if (cachedKey !== null) return Promise.resolve(cachedKey);
+  // Only use cache if we previously got a real key back
+  if (cachedKey) return Promise.resolve(cachedKey);
+  // Don't reuse a pending promise from a previous failed attempt
   if (!pending) {
     pending = fn().then((r) => {
-      cachedKey = r.key;
+      if (r.key) cachedKey = r.key;
+      else pending = null; // allow retry next time if key was empty
       return r.key;
+    }).catch(() => {
+      pending = null; // allow retry on error too
+      return "";
     });
   }
   return pending;
