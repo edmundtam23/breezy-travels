@@ -66,24 +66,68 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return brandedErrorResponse();
 }
 
+// Allowed origins for CSRF protection.
+// Requests whose Origin header doesn't match are rejected before SSR runs.
+const ALLOWED_ORIGINS = new Set([
+  "https://breezy-travels.edmund-tam23.workers.dev",
+]);
+
+// Security headers added to every response.
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
+    "connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com",
+    "frame-src 'none'",
+  ].join("; "),
+};
+
+function addSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // CSRF protection: reject cross-origin POST requests whose Origin
+      // doesn't match our allowed list. GET/HEAD are safe methods and exempt.
+      const method = request.method.toUpperCase();
+      if (method !== "GET" && method !== "HEAD") {
+        const origin = request.headers.get("origin");
+        if (origin && !ALLOWED_ORIGINS.has(origin)) {
+          return new Response("Forbidden", { status: 403 });
+        }
+      }
+
       // Expose Cloudflare Worker env bindings (secrets/vars) to server functions.
       // In Workers, env is passed per-request and is NOT on process.env or globalThis by default.
       (globalThis as unknown as { __env?: unknown }).__env = env;
       // Store the current request so server functions can read headers (e.g. Authorization).
       (globalThis as unknown as { __request?: Request }).__request = request;
-      if (env && typeof env === "object") {
-        for (const [k, v] of Object.entries(env as Record<string, unknown>)) {
-          if (typeof v === "string") {
-            (globalThis as unknown as Record<string, unknown>)[k] = v;
-          }
-        }
-      }
+
+      // NOTE: We intentionally do NOT spread individual env values onto globalThis
+      // to avoid leaking secrets (e.g. GEMINI_API_KEY) into the global scope.
+      // Server functions should read from globalThis.__env via readEnv() instead.
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      return addSecurityHeaders(normalized);
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();
