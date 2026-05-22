@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/lib/supabase";
 import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
