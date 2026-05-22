@@ -4,11 +4,23 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
-
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1",
+        "simple": {
+          "limit": 20,
+          "period": 60
+        }
+      }
+    ]
+  },
   "env": {
     "preview": {
-      "name": "breezy-travels-preview",
-      }
+      "name": "breezy-travels-preview"
     }
   }
+}
 // rebuild

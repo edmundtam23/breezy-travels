@@ -101,6 +101,13 @@ function addSecurityHeaders(response: Response): Response {
   });
 }
 
+// Paths that should be rate limited (AI + auth server functions).
+const RATE_LIMITED_PATHS = ["/_server"];
+
+type Env = {
+  RATE_LIMITER?: { limit: (opts: { key: string }) => Promise<{ success: boolean }> };
+};
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
@@ -111,6 +118,22 @@ export default {
         const origin = request.headers.get("origin");
         if (origin && !ALLOWED_ORIGINS.has(origin)) {
           return new Response("Forbidden", { status: 403 });
+        }
+      }
+
+      // Rate limiting: apply to server function routes (/_server) using
+      // the Cloudflare Rate Limiter binding. Keys by IP address so limits
+      // are per-user rather than global.
+      const { pathname } = new URL(request.url);
+      const rateLimiter = (env as Env).RATE_LIMITER;
+      if (rateLimiter && RATE_LIMITED_PATHS.some((p) => pathname.startsWith(p))) {
+        const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+        const { success } = await rateLimiter.limit({ key: ip });
+        if (!success) {
+          return new Response("Too many requests. Please slow down and try again shortly.", {
+            status: 429,
+            headers: { "Retry-After": "60" },
+          });
         }
       }
 
