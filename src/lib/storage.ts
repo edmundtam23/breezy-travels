@@ -188,5 +188,7 @@ export function useUpdateTrip(id: string | undefined) {
 }
  
 export function newId() {
-  return Math.random().toString(36).slice(2, 10);
+  // crypto.randomUUID() generates a cryptographically strong UUID v4,
+  // far more collision-resistant than the old Math.random() approach.
+  return crypto.randomUUID();
 }
