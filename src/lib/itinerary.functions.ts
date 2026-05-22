@@ -20,17 +20,20 @@ function readEnv(name: string): string | undefined {
 // We pass the token in the request payload since TanStack Start server
 // functions don't reliably forward custom headers.
 async function requireAuth(token: string) {
+  console.log("[requireAuth] token present:", !!token, "length:", token?.length);
   if (!token) {
     throw new Error("Unauthorized: you must be signed in to use this feature.");
   }
   const url = readEnv("VITE_SUPABASE_URL") ?? "";
   const key = readEnv("VITE_SUPABASE_ANON_KEY") ?? "";
+  console.log("[requireAuth] supabase url:", url ? "set" : "MISSING", "key:", key ? "set" : "MISSING");
   const client = createClient(url, key, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const { data, error } = await client.auth.getUser(token);
+  console.log("[requireAuth] getUser error:", error?.message ?? "none", "user:", data?.user?.id ?? "null");
   if (error || !data.user) {
-    throw new Error("Unauthorized: you must be signed in to use this feature.");
+    throw new Error(`Unauthorized: ${error?.message ?? "no user returned"}`);
   }
   return data.user;
 }
