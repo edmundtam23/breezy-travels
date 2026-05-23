@@ -117,6 +117,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
         {/* Inline script runs before paint to prevent dark mode flash */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Cloudflare Turnstile — loaded globally so it's available on login/signup */}
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
       </head>
       <body>
         {children}
@@ -128,26 +130,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  useEffect(() => {
-    // When Google OAuth completes, Supabase redirects back with the session
-    // token in the URL hash (#access_token=...). We must call getSession()
-    // to detect and exchange it — otherwise the session is never established.
-    // We also clean the hash from the URL afterward to avoid Chrome flagging
-    // it as a tracking parameter.
-    const hash = window.location.hash;
-    if (hash.includes("access_token")) {
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
-          // Clean the token out of the URL bar without triggering a reload
-          window.history.replaceState(null, "", window.location.pathname);
-        }
-      });
-    } else {
-      // Always call getSession on mount to restore any existing session
-      supabase.auth.getSession();
-    }
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
