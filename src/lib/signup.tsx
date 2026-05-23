@@ -16,6 +16,8 @@ export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
+export const clientLoader = () => null;
+
 function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
