@@ -78,15 +78,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
-  "Content-Security-Policy": [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
-    "connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com",
-    "frame-src 'none'",
-  ].join("; "),
+  "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;",
 };
 
 function addSecurityHeaders(response: Response): Response {

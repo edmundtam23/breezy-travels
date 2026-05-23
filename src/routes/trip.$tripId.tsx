@@ -63,6 +63,7 @@ import { MapPanel, PlaceSearchInput } from "@/components/map-panel";
 import { MapsProvider } from "@/components/maps-provider";
 import { useCommutes, type CommuteResult } from "@/lib/use-commutes";
 import { generateBlurb } from "@/lib/itinerary.functions";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/trip/$tripId")({
   component: TripBuilder,
@@ -659,7 +660,10 @@ function EditPopover({
                 onClick={async () => {
                   setBusy(true);
                   try {
-                    const r = await aiBlurb({ data: { name: stop.name, destination } });
+                    // Pass token in data payload so requireAuth() can validate server-side.
+                    const { data: sessionData } = await supabase.auth.getSession();
+                    const token = sessionData.session?.access_token ?? "";
+                    const r = await aiBlurb({ data: { name: stop.name, destination, token } });
                     setBlurb(r.blurb);
                     onChange({ blurb: r.blurb });
                   } catch (e) {

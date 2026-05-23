@@ -294,7 +294,13 @@ function NewTripDialog() {
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
     setLoading(true);
     try {
-      const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays } });
+      // Get the session token and pass it in the data payload so the
+      // server function can validate it with requireAuth().
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token ?? "";
+      console.log("[generateItinerary] session token present:", !!token, "length:", token.length);
+      console.log("[generateItinerary] token preview:", token.slice(0, 20));
+      const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
       const trip: Trip = {
         id: newId(),
         title: res.title,

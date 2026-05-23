@@ -16,35 +16,32 @@ function readEnv(name: string): string | undefined {
   return undefined;
 }
 
-// Verify the request carries a valid Supabase session.
-// TanStack Start stores the current request on globalThis.__request
-// so we can extract the Authorization header from it server-side.
-async function requireAuth() {
-  const url = readEnv("VITE_SUPABASE_URL") ?? "";
-  const key = readEnv("VITE_SUPABASE_ANON_KEY") ?? "";
-
-  // Extract Bearer token from the incoming request headers
-  const g = globalThis as unknown as { __request?: Request };
-  const authHeader = g.__request?.headers?.get("authorization") ?? "";
-  const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-  if (!accessToken) {
+// Verify a Supabase session token passed directly from the client.
+// We pass the token in the request payload since TanStack Start server
+// functions don't reliably forward custom headers.
+async function requireAuth(token: string) {
+  console.log("[requireAuth] token present:", !!token, "length:", token?.length);
+  if (!token) {
     throw new Error("Unauthorized: you must be signed in to use this feature.");
   }
-
+  const url = readEnv("VITE_SUPABASE_URL") ?? "";
+  const key = readEnv("VITE_SUPABASE_ANON_KEY") ?? "";
+  console.log("[requireAuth] supabase url:", url ? "set" : "MISSING", "key:", key ? "set" : "MISSING");
   const client = createClient(url, key, {
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    global: { headers: { Authorization: `Bearer ${token}` } },
   });
-  const { data, error } = await client.auth.getUser(accessToken);
+  const { data, error } = await client.auth.getUser(token);
+  console.log("[requireAuth] getUser error:", error?.message ?? "none", "user:", data?.user?.id ?? "null");
   if (error || !data.user) {
-    throw new Error("Unauthorized: you must be signed in to use this feature.");
+    throw new Error(`Unauthorized: ${error?.message ?? "no user returned"}`);
   }
   return data.user;
 }
 
-export const getMapsApiKey = createServerFn({ method: "GET" })
-  .handler(async () => {
-    await requireAuth();
+export const getMapsApiKey = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string }) => d)
+  .handler(async ({ data }) => {
+    await requireAuth(data.token);
     const key = readEnv("GOOGLE_MAPS_API_KEY") ?? "";
     return { key };
   });
@@ -85,17 +82,19 @@ function getClient() {
 const GenerateItineraryInput = z.object({
   prompt: z.string().min(1).max(500).trim(),
   days: z.number().int().min(1).max(14),
+  token: z.string().min(1),
 });
 
 const GenerateBlurbInput = z.object({
   name: z.string().min(1).max(200).trim(),
   destination: z.string().max(200).trim().optional(),
+  token: z.string().min(1),
 });
 
 export const generateItinerary = createServerFn({ method: "POST" })
-  .inputValidator((d: { prompt: string; days: number }) => GenerateItineraryInput.parse(d))
+  .inputValidator((d: { prompt: string; days: number; token: string }) => GenerateItineraryInput.parse(d))
   .handler(async ({ data }) => {
-    await requireAuth();
+    await requireAuth(data.token);
     const ai = getClient();
 
     try {
@@ -179,9 +178,9 @@ return parsed;
   });
 
 export const generateBlurb = createServerFn({ method: "POST" })
-  .inputValidator((d: { name: string; destination?: string }) => GenerateBlurbInput.parse(d))
+  .inputValidator((d: { name: string; destination?: string; token: string }) => GenerateBlurbInput.parse(d))
   .handler(async ({ data }) => {
-    await requireAuth();
+    await requireAuth(data.token);
     const ai = getClient();
     const res = await ai.models.generateContent({
       model: MODEL,
