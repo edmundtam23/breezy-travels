@@ -117,8 +117,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
         {/* Inline script runs before paint to prevent dark mode flash */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        {/* Cloudflare Turnstile — loaded globally so it's available on login/signup */}
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+        {/* Cloudflare Turnstile — onload callback notifies any waiting render() calls */}
+        <script dangerouslySetInnerHTML={{ __html: "window.__turnstileReady = false;" }} />
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" async defer />
+        <script dangerouslySetInnerHTML={{ __html: "function onTurnstileLoad() { window.__turnstileReady = true; if (window.__turnstileOnLoad) window.__turnstileOnLoad(); }" }} />
       </head>
       <body>
         {children}

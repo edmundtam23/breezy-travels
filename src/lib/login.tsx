@@ -35,7 +35,7 @@ function LoginPage() {
   const widgetIdRef = useRef<string | null>(null);
   const navigate = useNavigate();
 
-  // Render Turnstile widget once script is loaded (script loaded globally in __root.tsx)
+  // Render Turnstile widget — uses the global onload callback set in __root.tsx
   useEffect(() => {
     const render = () => {
       if (!turnstileRef.current || !window.turnstile) return;
@@ -48,16 +48,10 @@ function LoginPage() {
       });
     };
 
-    if (window.turnstile) {
+    if ((window as unknown as { __turnstileReady?: boolean }).__turnstileReady) {
       render();
     } else {
-      const interval = setInterval(() => {
-        if (window.turnstile) {
-          render();
-          clearInterval(interval);
-        }
-      }, 100);
-      return () => clearInterval(interval);
+      (window as unknown as { __turnstileOnLoad?: () => void }).__turnstileOnLoad = render;
     }
 
     return () => {
@@ -65,6 +59,7 @@ function LoginPage() {
         window.turnstile.remove(widgetIdRef.current);
         widgetIdRef.current = null;
       }
+      (window as unknown as { __turnstileOnLoad?: () => void }).__turnstileOnLoad = undefined;
     };
   }, []);
 
