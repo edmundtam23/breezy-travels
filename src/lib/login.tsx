@@ -35,8 +35,8 @@ function LoginPage() {
   const widgetIdRef = useRef<string | null>(null);
   const navigate = useNavigate();
 
+  // Render Turnstile widget once script is loaded (script loaded globally in __root.tsx)
   useEffect(() => {
-    const scriptId = "cf-turnstile-script";
     const render = () => {
       if (!turnstileRef.current || !window.turnstile) return;
       if (widgetIdRef.current) return;
@@ -48,15 +48,16 @@ function LoginPage() {
       });
     };
 
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      script.async = true;
-      script.onload = render;
-      document.head.appendChild(script);
-    } else {
+    if (window.turnstile) {
       render();
+    } else {
+      const interval = setInterval(() => {
+        if (window.turnstile) {
+          render();
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }
 
     return () => {

@@ -38,12 +38,11 @@ function SignupPage() {
   const widgetIdRef = useRef<string | null>(null);
   const navigate = useNavigate();
 
-  // Load Turnstile script and render widget
+  // Render Turnstile widget once script is loaded (script loaded globally in __root.tsx)
   useEffect(() => {
-    const scriptId = "cf-turnstile-script";
     const render = () => {
       if (!turnstileRef.current || !window.turnstile) return;
-      if (widgetIdRef.current) return; // already rendered
+      if (widgetIdRef.current) return;
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         callback: (token: string) => setCaptchaToken(token),
@@ -52,15 +51,17 @@ function SignupPage() {
       });
     };
 
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      script.async = true;
-      script.onload = render;
-      document.head.appendChild(script);
-    } else {
+    // Script may already be loaded, or we wait for it
+    if (window.turnstile) {
       render();
+    } else {
+      const interval = setInterval(() => {
+        if (window.turnstile) {
+          render();
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }
 
     return () => {
