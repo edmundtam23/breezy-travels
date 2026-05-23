@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { signUp, signInWithGoogle } from "@/lib/auth";
 
-const TURNSTILE_SITE_KEY = "0x4AAAAAADUnxV6uBAyCZ9ly";
+const TURNSTILE_SITE_KEY = "0x4AAAAAADUnxV6uBAyCZ9ly"; // breezy-v2
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
