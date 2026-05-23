@@ -129,12 +129,24 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  // Handle OAuth redirects (e.g. Google sign-in).
-  // Supabase returns the session token in the URL hash after OAuth.
-  // Calling getSession() on mount detects it, exchanges the token,
-  // and persists the session — without this the user lands logged-out.
   useEffect(() => {
-    supabase.auth.getSession();
+    // When Google OAuth completes, Supabase redirects back with the session
+    // token in the URL hash (#access_token=...). We must call getSession()
+    // to detect and exchange it — otherwise the session is never established.
+    // We also clean the hash from the URL afterward to avoid Chrome flagging
+    // it as a tracking parameter.
+    const hash = window.location.hash;
+    if (hash.includes("access_token")) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          // Clean the token out of the URL bar without triggering a reload
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      });
+    } else {
+      // Always call getSession on mount to restore any existing session
+      supabase.auth.getSession();
+    }
   }, []);
 
   return (
