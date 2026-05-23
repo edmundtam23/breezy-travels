@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,16 +11,6 @@ import { signIn, signInWithGoogle } from "@/lib/auth";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAADUnxV6uBAyCZ9ly";
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (container: HTMLElement, options: Record<string, unknown>) => string;
-      reset: (widgetId: string) => void;
-      remove: (widgetId: string) => void;
-    };
-  }
-}
-
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
@@ -31,44 +21,19 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const turnstileRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
   const navigate = useNavigate();
 
-  // Render Turnstile widget — uses the global onload callback set in __root.tsx
+  // Register global Turnstile callbacks for the data-attribute widget
   useEffect(() => {
-    const render = () => {
-      if (!turnstileRef.current || !window.turnstile) return;
-      if (widgetIdRef.current) return;
-      widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        callback: (token: string) => setCaptchaToken(token),
-        "expired-callback": () => setCaptchaToken(null),
-        "error-callback": () => setCaptchaToken(null),
-      });
-    };
-
-    if ((window as unknown as { __turnstileReady?: boolean }).__turnstileReady) {
-      render();
-    } else {
-      (window as unknown as { __turnstileOnLoad?: () => void }).__turnstileOnLoad = render;
-    }
-
+    (window as unknown as Record<string, unknown>).onTurnstileCallback = (token: string) => setCaptchaToken(token);
+    (window as unknown as Record<string, unknown>).onTurnstileExpired = () => setCaptchaToken(null);
     return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-      }
-      (window as unknown as { __turnstileOnLoad?: () => void }).__turnstileOnLoad = undefined;
+      delete (window as unknown as Record<string, unknown>).onTurnstileCallback;
+      delete (window as unknown as Record<string, unknown>).onTurnstileExpired;
     };
   }, []);
 
-  const resetCaptcha = () => {
-    if (widgetIdRef.current && window.turnstile) {
-      window.turnstile.reset(widgetIdRef.current);
-    }
-    setCaptchaToken(null);
-  };
+  const resetCaptcha = () => setCaptchaToken(null);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -168,8 +133,13 @@ function LoginPage() {
               />
             </div>
 
-            {/* Turnstile widget */}
-            <div ref={turnstileRef} />
+            {/* Turnstile widget — auto-initialized via data attributes */}
+            <div
+              className="cf-turnstile"
+              data-sitekey={TURNSTILE_SITE_KEY}
+              data-callback="onTurnstileCallback"
+              data-expired-callback="onTurnstileExpired"
+            />
 
             <Button className="w-full" onClick={handleLogin} disabled={loading || !captchaToken}>
               {loading ? "Signing in…" : "Sign in"}
