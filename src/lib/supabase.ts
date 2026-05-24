@@ -29,5 +29,13 @@ export const supabase = createClient(getUrl(), getKey(), {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    // FIX: Use PKCE flow instead of the implicit grant default.
+    // With implicit grant, Supabase puts the access_token in the URL hash
+    // after OAuth redirect (#access_token=...&refresh_token=...), where it
+    // can leak via browser history, referrer headers, or third-party scripts
+    // that fire before Supabase consumes the hash.
+    // PKCE exchanges a one-time code server-side instead — tokens never
+    // appear in the URL. Supabase JS v2 handles all the mechanics automatically.
+    flowType: "pkce",
   },
 });
