@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,19 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    (window as unknown as Record<string, unknown>).onTurnstileCallback = (token: string) =>
+      setCaptchaToken(token);
+    (window as unknown as Record<string, unknown>).onTurnstileExpired = () =>
+      setCaptchaToken(null);
+    return () => {
+      delete (window as unknown as Record<string, unknown>).onTurnstileCallback;
+      delete (window as unknown as Record<string, unknown>).onTurnstileExpired;
+    };
+  }, []);
 
   const handleSignup = async () => {
     if (!email.trim() || !password.trim()) {
@@ -37,7 +49,7 @@ function SignupPage() {
     }
     setLoading(true);
     try {
-      await signUp(email.trim(), password);
+      await signUp(email.trim(), password, captchaToken ?? undefined);
       setDone(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign up failed. Please try again.");
@@ -80,7 +92,6 @@ function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Toaster />
       <div className="w-full max-w-md space-y-6">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2">
           <MapPin className="h-6 w-6 text-primary" />
           <span className="text-xl font-semibold">Breezy Plans</span>
@@ -92,7 +103,6 @@ function SignupPage() {
             <CardDescription>Save your trips and access them anywhere</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Google SSO */}
             <Button
               variant="outline"
               className="w-full"
@@ -135,7 +145,6 @@ function SignupPage() {
               </div>
             </div>
 
-            {/* Email/Password */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -167,6 +176,13 @@ function SignupPage() {
                 onKeyDown={(e) => e.key === "Enter" && handleSignup()}
               />
             </div>
+
+            <div
+              className="cf-turnstile"
+              data-sitekey="0x4AAAAAADUnxV6uBAyCZ9ly"
+              data-callback="onTurnstileCallback"
+              data-expired-callback="onTurnstileExpired"
+            />
 
             <Button className="w-full" onClick={handleSignup} disabled={loading}>
               {loading ? "Creating account…" : "Create account"}
