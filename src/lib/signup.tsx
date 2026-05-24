@@ -47,9 +47,15 @@ function SignupPage() {
       toast.error("Password must be at least 6 characters.");
       return;
     }
+    // FIX: Guard signup behind Turnstile exactly as login does.
+    // Without this, bots could bypass the widget and call signUp directly.
+    if (!captchaToken) {
+      toast.error("Please complete the security check.");
+      return;
+    }
     setLoading(true);
     try {
-      await signUp(email.trim(), password, captchaToken ?? undefined);
+      await signUp(email.trim(), password, captchaToken);
       setDone(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign up failed. Please try again.");
@@ -188,7 +194,8 @@ function SignupPage() {
               data-expired-callback="onTurnstileExpired"
             />
 
-            <Button className="w-full" onClick={handleSignup} disabled={loading}>
+            {/* FIX: Disable button when captcha not yet completed, same as login */}
+            <Button className="w-full" onClick={handleSignup} disabled={loading || !captchaToken}>
               {loading ? "Creating account…" : "Create account"}
             </Button>
 

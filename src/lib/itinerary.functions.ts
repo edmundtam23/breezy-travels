@@ -17,8 +17,6 @@ function readEnv(name: string): string | undefined {
 }
 
 // Verify a Supabase session token passed directly from the client.
-// We pass the token in the request payload since TanStack Start server
-// functions don't reliably forward custom headers.
 async function requireAuth(token: string) {
   if (!token) {
     throw new Error("Unauthorized: you must be signed in to use this feature.");
@@ -33,6 +31,91 @@ async function requireAuth(token: string) {
     throw new Error("Unauthorized: you must be signed in to use this feature.");
   }
   return data.user;
+}
+
+// Returns a Supabase client using the service role key.
+// This bypasses RLS and is required for writing to ai_rate_limits,
+// which has no user-facing RLS policies by design.
+// NEVER expose this client or its key to the browser.
+function getServiceClient() {
+  const url = readEnv("VITE_SUPABASE_URL") ?? "";
+  const serviceKey = readEnv("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!serviceKey) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY not configured");
+  }
+  return createClient(url, serviceKey, {
+    auth: { persistSession: false },
+  });
+}
+
+// Per-user AI rate limiting constants.
+// ITINERARY_COOLDOWN_MS: generateItinerary is expensive (multi-second Gemini call,
+// structured JSON response). 30s cooldown prevents runaway hammering while
+// still feeling responsive for normal use.
+// BLURB_COOLDOWN_MS: generateBlurb is cheap but can be called in a loop
+// (one per stop edit). 3s cooldown allows reasonable UX while limiting burst abuse.
+const ITINERARY_COOLDOWN_MS = 30_000; // 30 seconds between itinerary generations
+const BLURB_COOLDOWN_MS = 3_000;      // 3 seconds between blurb generations
+
+type AiAction = "generateItinerary" | "generateBlurb";
+
+// Checks whether the user is within the cooldown window for a given AI action.
+// Uses an upsert so the first call always succeeds and sets the timestamp.
+//
+// Strategy: optimistic upsert — we write last_call_at = now() and action = action
+// only when the cooldown has elapsed, using a conditional upsert. If the row
+// was updated less than cooldown_ms ago, Postgres won't update it and returns
+// the existing row so we can compute the wait time.
+//
+// We use two columns (one per action) so itinerary and blurb limits are
+// tracked independently — a blurb call doesn't burn the itinerary cooldown.
+async function checkAndRecordAiRateLimit(userId: string, action: AiAction): Promise<void> {
+  const db = getServiceClient();
+  const cooldownMs = action === "generateItinerary" ? ITINERARY_COOLDOWN_MS : BLURB_COOLDOWN_MS;
+  const cooldownSec = cooldownMs / 1000;
+  const column = action === "generateItinerary" ? "last_itinerary_at" : "last_blurb_at";
+
+  // Fetch the current record for this user (if any).
+  const { data: existing, error: fetchError } = await db
+    .from("ai_rate_limits")
+    .select(column)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (fetchError) {
+    // If we can't read the rate limit table, fail open with a warning rather
+    // than blocking the user. Log so we notice misconfiguration.
+    console.error("ai_rate_limits fetch error (failing open):", fetchError.message);
+    return;
+  }
+
+  if (existing) {
+    const lastCallAt = existing[column as keyof typeof existing] as string | null;
+    if (lastCallAt) {
+      const elapsedMs = Date.now() - new Date(lastCallAt).getTime();
+      if (elapsedMs < cooldownMs) {
+        const waitSec = Math.ceil((cooldownMs - elapsedMs) / 1000);
+        throw new Error(
+          `Please wait ${waitSec} more second${waitSec === 1 ? "" : "s"} before generating another ${
+            action === "generateItinerary" ? "itinerary" : "blurb"
+          }.`
+        );
+      }
+    }
+  }
+
+  // Record this call. upsert: insert if no row, update the relevant column if row exists.
+  const { error: upsertError } = await db
+    .from("ai_rate_limits")
+    .upsert(
+      { user_id: userId, [column]: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+
+  if (upsertError) {
+    // Non-fatal: log but don't block the user if the write fails.
+    console.error("ai_rate_limits upsert error (failing open):", upsertError.message);
+  }
 }
 
 export const getMapsApiKey = createServerFn({ method: "POST" })
@@ -91,7 +174,13 @@ const GenerateBlurbInput = z.object({
 export const generateItinerary = createServerFn({ method: "POST" })
   .inputValidator((d: { prompt: string; days: number; token: string }) => GenerateItineraryInput.parse(d))
   .handler(async ({ data }) => {
-    await requireAuth(data.token);
+    // 1. Verify the session is valid and get the user.
+    const user = await requireAuth(data.token);
+
+    // 2. Enforce per-user cooldown before touching Gemini.
+    //    This runs after auth so anonymous callers never reach the rate limit check.
+    await checkAndRecordAiRateLimit(user.id, "generateItinerary");
+
     const ai = getClient();
 
     try {
@@ -162,8 +251,8 @@ export const generateItinerary = createServerFn({ method: "POST" })
       const text = res.text;
       if (!text) throw new Error("No itinerary generated");
       const raw = JSON.parse(text);
-const parsed = ItinerarySchema.parse(raw);
-return parsed;
+      const parsed = ItinerarySchema.parse(raw);
+      return parsed;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (/429|rate/i.test(msg))
@@ -177,7 +266,12 @@ return parsed;
 export const generateBlurb = createServerFn({ method: "POST" })
   .inputValidator((d: { name: string; destination?: string; token: string }) => GenerateBlurbInput.parse(d))
   .handler(async ({ data }) => {
-    await requireAuth(data.token);
+    // 1. Verify the session is valid and get the user.
+    const user = await requireAuth(data.token);
+
+    // 2. Enforce per-user cooldown for blurb generation.
+    await checkAndRecordAiRateLimit(user.id, "generateBlurb");
+
     const ai = getClient();
     const res = await ai.models.generateContent({
       model: MODEL,
