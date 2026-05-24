@@ -73,6 +73,15 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 // Security headers added to every response.
+// CSP notes:
+// - 'unsafe-inline' and 'unsafe-eval' removed from script-src.
+//   If TanStack Start injects inline scripts for SSR dehydration, violations
+//   will appear in the browser console as CSP errors — add a nonce-based
+//   exception at that point rather than re-adding 'unsafe-inline' globally.
+// - 'unsafe-inline' kept in style-src: removing it breaks CSS-in-JS and
+//   most component libraries (including shadcn/ui) and provides minimal
+//   security benefit since styles can't execute code.
+// - wss://*.supabase.co added to connect-src for Supabase Realtime.
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Frame-Options": "DENY",
   "X-Content-Type-Options": "nosniff",
@@ -80,11 +89,11 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
+    "script-src 'self' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
-    "connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://challenges.cloudflare.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://challenges.cloudflare.com",
     "frame-src https://challenges.cloudflare.com",
   ].join("; "),
 };
