@@ -75,12 +75,16 @@ const ALLOWED_ORIGINS = new Set([
 // Security headers added to every response.
 // CSP notes:
 // - 'unsafe-inline' and 'unsafe-eval' removed from script-src.
-//   If TanStack Start injects inline scripts for SSR dehydration, violations
-//   will appear in the browser console as CSP errors — add a nonce-based
-//   exception at that point rather than re-adding 'unsafe-inline' globally.
+// - Two SHA-256 hashes added to script-src to allow the specific inline
+//   scripts TanStack Start injects for SSR state dehydration. These hashes
+//   were captured from CSP violation reports on the live site. Only these
+//   exact scripts are permitted to run inline — any other injected script
+//   will be blocked.
+// - If TanStack Start is updated and the injected scripts change, new
+//   violation reports will appear in the console with updated hashes to
+//   replace these with.
 // - 'unsafe-inline' kept in style-src: removing it breaks CSS-in-JS and
-//   most component libraries (including shadcn/ui) and provides minimal
-//   security benefit since styles can't execute code.
+//   component libraries (shadcn/ui) and styles cannot execute code anyway.
 // - wss://*.supabase.co added to connect-src for Supabase Realtime.
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Frame-Options": "DENY",
@@ -89,7 +93,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
+    "script-src 'self' 'sha256-BeofI1j9Y3EkoUkcy4qkUWYs3QPYyyKTPORO53Hruws=' 'sha256-BGPvx2fHSBwbOfiiAfpwZP9Yw3c28LEtAoitbJVauK0=' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
