@@ -93,7 +93,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'sha256-BeofI1j9Y3EkoUkcy4qkUWYs3QPYyyKTPORO53Hruws=' 'sha256-BGPvx2fHSBwbOfiiAfpwZP9Yw3c28LEtAoitbJVauK0=' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
+    "script-src 's"script-src 'self' 'sha256-BeofI1j9Y3EkoUkcy4qkUWYs3QPYyyKTPORO53Hruws=' 'sha256-BGPvx2fHSBwbOfiiAfpwZP9Yw3c28LEtAoitbJVauK0=' 'sha256-YAE8Fnmg6+WZYT6b8JoEc0OkbRaAX+UPjUPbVcX/ECI=' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",elf' 'sha256-BeofI1j9Y3EkoUkcy4qkUWYs3QPYyyKTPORO53Hruws=' 'sha256-BGPvx2fHSBwbOfiiAfpwZP9Yw3c28LEtAoitbJVauK0=' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
