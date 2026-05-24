@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,37 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const win = window as unknown as Record<string, unknown>;
+    const tryRender = () => {
+      if (
+        win.turnstile &&
+        typeof (win.turnstile as { render?: unknown }).render === "function" &&
+        turnstileRef.current &&
+        turnstileRef.current.childElementCount === 0
+      ) {
+        (win.turnstile as { render: (el: HTMLElement, opts: object) => void }).render(
+          turnstileRef.current,
+          {
+            sitekey: "0x4AAAAAADUnxV6uBAyCZ9ly",
+            callback: (token: string) => setCaptchaToken(token),
+            "expired-callback": () => setCaptchaToken(null),
+          }
+        );
+      }
+    };
+    tryRender();
+    const interval = setInterval(tryRender, 200);
+    const timeout = setTimeout(() => clearInterval(interval), 10000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -27,7 +57,7 @@ function LoginPage() {
     }
     setLoading(true);
     try {
-      await signIn(email.trim(), password);
+      await signIn(email.trim(), password, captchaToken ?? undefined);
       navigate({ to: "/" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Login failed. Please try again.");
@@ -39,7 +69,6 @@ function LoginPage() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      // Google SSO redirects automatically — no need to navigate
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Google sign-in failed.");
       setGoogleLoading(false);
@@ -128,6 +157,8 @@ function LoginPage() {
                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               />
             </div>
+
+            <div ref={turnstileRef} />
 
             <Button className="w-full" onClick={handleLogin} disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}
