@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,16 +21,34 @@ function SignupPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    (window as unknown as Record<string, unknown>).onTurnstileCallback = (token: string) =>
-      setCaptchaToken(token);
-    (window as unknown as Record<string, unknown>).onTurnstileExpired = () =>
-      setCaptchaToken(null);
+    const win = window as unknown as Record<string, unknown>;
+    const tryRender = () => {
+      if (
+        win.turnstile &&
+        typeof (win.turnstile as { render?: unknown }).render === "function" &&
+        turnstileRef.current &&
+        turnstileRef.current.childElementCount === 0
+      ) {
+        (win.turnstile as { render: (el: HTMLElement, opts: object) => void }).render(
+          turnstileRef.current,
+          {
+            sitekey: "0x4AAAAAADUnxV6uBAyCZ9ly",
+            callback: (token: string) => setCaptchaToken(token),
+            "expired-callback": () => setCaptchaToken(null),
+          }
+        );
+      }
+    };
+    tryRender();
+    const interval = setInterval(tryRender, 200);
+    const timeout = setTimeout(() => clearInterval(interval), 10000);
     return () => {
-      delete (window as unknown as Record<string, unknown>).onTurnstileCallback;
-      delete (window as unknown as Record<string, unknown>).onTurnstileExpired;
+      clearInterval(interval);
+      clearTimeout(timeout);
     };
   }, []);
 
@@ -177,12 +195,7 @@ function SignupPage() {
               />
             </div>
 
-            <div
-              className="cf-turnstile"
-              data-sitekey="0x4AAAAAADUnxV6uBAyCZ9ly"
-              data-callback="onTurnstileCallback"
-              data-expired-callback="onTurnstileExpired"
-            />
+            <div ref={turnstileRef} />
 
             <Button className="w-full" onClick={handleSignup} disabled={loading}>
               {loading ? "Creating account…" : "Create account"}
