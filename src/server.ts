@@ -85,7 +85,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
     "connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://challenges.cloudflare.com",
-    "frame-src 'none'",
+    "frame-src https://challenges.cloudflare.com",
   ].join("; "),
 };
 
