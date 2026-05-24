@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,69 @@ export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
+// Password strength scoring — no external library needed.
+// Returns a score 0-4 and a label/color for the UI.
+function getPasswordStrength(password: string): {
+  score: number;       // 0 = empty, 1 = weak, 2 = fair, 3 = good, 4 = strong
+  label: string;
+  color: string;       // Tailwind bg class for the strength bar segments
+} {
+  if (!password) return { score: 0, label: "", color: "" };
+
+  let score = 0;
+  if (password.length >= 8)  score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  // Map raw score (0-5) down to 4 levels
+  if (score <= 1) return { score: 1, label: "Weak",   color: "bg-red-500" };
+  if (score === 2) return { score: 2, label: "Fair",   color: "bg-orange-400" };
+  if (score === 3) return { score: 3, label: "Good",   color: "bg-yellow-400" };
+  return              { score: 4, label: "Strong", color: "bg-green-500" };
+}
+
+function PasswordStrengthBar({ password }: { password: string }) {
+  const { score, label, color } = useMemo(() => getPasswordStrength(password), [password]);
+
+  if (!password) return null;
+
+  return (
+    <div className="space-y-1.5">
+      {/* Four segment bar */}
+      <div className="flex gap-1">
+        {[1, 2, 3, 4].map((level) => (
+          <div
+            key={level}
+            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+              score >= level ? color : "bg-muted"
+            }`}
+          />
+        ))}
+      </div>
+      {/* Label + hints */}
+      <div className="flex items-center justify-between">
+        <p className={`text-xs font-medium transition-colors duration-300 ${
+          score === 1 ? "text-red-500" :
+          score === 2 ? "text-orange-400" :
+          score === 3 ? "text-yellow-500" :
+          "text-green-500"
+        }`}>
+          {label}
+        </p>
+        {score < 4 && (
+          <p className="text-xs text-muted-foreground">
+            {score === 1 && "Try adding uppercase letters or numbers"}
+            {score === 2 && "Add a symbol or make it longer"}
+            {score === 3 && "Add a symbol to make it stronger"}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,34 +84,16 @@ function SignupPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const turnstileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const win = window as unknown as Record<string, unknown>;
-    const tryRender = () => {
-      if (
-        win.turnstile &&
-        typeof (win.turnstile as { render?: unknown }).render === "function" &&
-        turnstileRef.current &&
-        turnstileRef.current.childElementCount === 0
-      ) {
-        (win.turnstile as { render: (el: HTMLElement, opts: object) => void }).render(
-          turnstileRef.current,
-          {
-            sitekey: "0x4AAAAAADUnxV6uBAyCZ9ly",
-            callback: (token: string) => setCaptchaToken(token),
-            "expired-callback": () => setCaptchaToken(null),
-          }
-        );
-      }
-    };
-    tryRender();
-    const interval = setInterval(tryRender, 200);
-    const timeout = setTimeout(() => clearInterval(interval), 10000);
+    (window as unknown as Record<string, unknown>).onTurnstileCallback = (token: string) =>
+      setCaptchaToken(token);
+    (window as unknown as Record<string, unknown>).onTurnstileExpired = () =>
+      setCaptchaToken(null);
     return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
+      delete (window as unknown as Record<string, unknown>).onTurnstileCallback;
+      delete (window as unknown as Record<string, unknown>).onTurnstileExpired;
     };
   }, []);
 
@@ -65,9 +110,13 @@ function SignupPage() {
       toast.error("Password must be at least 6 characters.");
       return;
     }
+    if (!captchaToken) {
+      toast.error("Please complete the security check.");
+      return;
+    }
     setLoading(true);
     try {
-      await signUp(email.trim(), password, captchaToken ?? undefined);
+      await signUp(email.trim(), password, captchaToken);
       setDone(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign up failed. Please try again.");
@@ -110,6 +159,7 @@ function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Toaster />
       <div className="w-full max-w-md space-y-6">
+        {/* Logo */}
         <div className="flex items-center justify-center gap-2">
           <MapPin className="h-6 w-6 text-primary" />
           <span className="text-xl font-semibold">Breezy Plans</span>
@@ -121,6 +171,7 @@ function SignupPage() {
             <CardDescription>Save your trips and access them anywhere</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Google SSO */}
             <Button
               variant="outline"
               className="w-full"
@@ -163,6 +214,7 @@ function SignupPage() {
               </div>
             </div>
 
+            {/* Email/Password */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -182,6 +234,8 @@ function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              {/* Strength bar appears as soon as the user starts typing */}
+              <PasswordStrengthBar password={password} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm">Confirm password</Label>
@@ -195,9 +249,15 @@ function SignupPage() {
               />
             </div>
 
-            <div ref={turnstileRef} />
+            {/* Turnstile CAPTCHA */}
+            <div
+              className="cf-turnstile"
+              data-sitekey="0x4AAAAAADUnxV6uBAyCZ9ly"
+              data-callback="onTurnstileCallback"
+              data-expired-callback="onTurnstileExpired"
+            />
 
-            <Button className="w-full" onClick={handleSignup} disabled={loading}>
+            <Button className="w-full" onClick={handleSignup} disabled={loading || !captchaToken}>
               {loading ? "Creating account…" : "Create account"}
             </Button>
 
