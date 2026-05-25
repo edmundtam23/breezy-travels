@@ -26,6 +26,10 @@ import { signOut } from "@/lib/auth";
 import { getTheme, setTheme, nextTheme, type Theme } from "@/lib/theme";
 import type { User } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
+// ── NEW ───────────────────────────────────────────────────────────────────────
+import { DemoTrip } from "@/components/demo-trip";
+import { DemoCta } from "@/components/demo-cta";
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,7 +92,6 @@ function useCurrentUser() {
   return user;
 }
 
-// Theme toggle icon — shows the CURRENT mode so user knows what they're on
 function ThemeIcon({ theme }: { theme: Theme }) {
   if (theme === "light") return <Sun className="h-4 w-4" />;
   if (theme === "dark") return <Moon className="h-4 w-4" />;
@@ -102,7 +105,6 @@ function ThemeToggle() {
     setThemeState(getTheme());
   }, []);
 
-  // Also listen for system preference changes when in system mode
   useEffect(() => {
     if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -176,12 +178,14 @@ function HomePage() {
           </div>
         </div>
       </header>
+
       <main className="mx-auto max-w-6xl px-6 py-10">
         <h1 className="text-3xl font-semibold tracking-tight">Your trips</h1>
         <p className="mt-2 text-muted-foreground">
           Plan day-by-day itineraries, reorder stops on a map, and catch tight commute
           windows before they catch you.
         </p>
+
         {!user && (
           <div className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
             <Link to="/signup" className="font-medium text-primary hover:underline">
@@ -194,8 +198,14 @@ function HomePage() {
             to save your trips across devices.
           </div>
         )}
+
         {trips.length === 0 ? (
-          <EmptyState />
+          // ── Show demo for logged-out users, empty state for logged-in ────────
+          !user ? (
+            <UnauthenticatedHomepage />
+          ) : (
+            <EmptyState />
+          )
         ) : (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {trips.map((t) => (
@@ -207,6 +217,118 @@ function HomePage() {
     </div>
   );
 }
+
+// ── NEW: Unauthenticated homepage with live demo ──────────────────────────────
+
+function UnauthenticatedHomepage() {
+  return (
+    /*
+     * `relative` + `overflow-hidden` gives the desktop sticky bar (`position:
+     * sticky; bottom: 0`) a proper scroll container to stick inside, so it
+     * anchors to the bottom of this section rather than the page.
+     */
+    <section className="relative mt-8 overflow-hidden">
+      {/* Live demo label */}
+      <div className="mb-4 flex items-center gap-2">
+        <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:border-green-900 dark:bg-green-950/50 dark:text-green-400">
+          ✦ Live demo
+        </span>
+        <span className="text-xs text-muted-foreground">No account needed to preview</span>
+      </div>
+
+      {/*
+       * Desktop: two-column grid — trip card left, map placeholder right.
+       * Mobile: single column, trip card only (map is the native app view).
+       */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_380px]">
+
+        {/* Left: demo trip card */}
+        <div>
+          <DemoTrip />
+        </div>
+
+        {/* Right: map placeholder — desktop only */}
+        <div className="hidden md:flex flex-col rounded-xl border bg-muted/30 overflow-hidden">
+          {/* Simulated map header */}
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+              Map view
+            </span>
+          </div>
+          {/* Map body — subtle grid lines to evoke a map */}
+          <div className="relative flex-1 min-h-[320px] overflow-hidden">
+            <svg
+              className="absolute inset-0 h-full w-full text-border"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <defs>
+                <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                </pattern>
+                <pattern id="map-roads-h" width="120" height="120" patternUnits="userSpaceOnUse">
+                  <rect width="120" height="5" y="60" fill="currentColor" opacity="0.4" />
+                </pattern>
+                <pattern id="map-roads-v" width="120" height="120" patternUnits="userSpaceOnUse">
+                  <rect width="5" height="120" x="80" fill="currentColor" opacity="0.4" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#map-grid)" />
+              <rect width="100%" height="100%" fill="url(#map-roads-h)" />
+              <rect width="100%" height="100%" fill="url(#map-roads-v)" />
+            </svg>
+
+            {/* Stop pins */}
+            <div className="absolute" style={{ top: "30%", left: "58%" }}>
+              <MapPin1 active />
+            </div>
+            <div className="absolute" style={{ top: "55%", left: "35%" }}>
+              <MapPin1 />
+            </div>
+            <div className="absolute" style={{ top: "70%", left: "62%" }}>
+              <MapPin1 dim />
+            </div>
+
+            {/* "Sign up to see real map" overlay */}
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-t from-background/95 to-transparent pb-8 pt-16">
+              <p className="text-sm text-muted-foreground">
+                Sign up to explore stops on a live map
+              </p>
+              <Link to="/signup">
+                <Button size="sm" variant="outline">
+                  Get started free
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA — floating pill on mobile, sticky bar on desktop */}
+      {/* Extra bottom padding on mobile so content doesn't hide behind the pill */}
+      <div className="pb-24 md:pb-0">
+        <DemoCta />
+      </div>
+    </section>
+  );
+}
+
+// Tiny inline pin component used in the map placeholder
+function MapPin1({ active, dim }: { active?: boolean; dim?: boolean }) {
+  return (
+    <div
+      className={`
+        flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center
+        rounded-full border-2 border-background text-[10px] font-semibold shadow-sm
+        ${active ? "bg-orange-500 text-white" : dim ? "bg-muted text-muted-foreground" : "bg-foreground text-background"}
+      `}
+    >
+      {active ? "1" : dim ? "3" : "2"}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -290,29 +412,25 @@ function NewTripDialog() {
       return;
     }
 
-  // Check auth before hitting the server — gives a clean UX instead of
-  // a raw Zod error when an unauthenticated user tries to generate.
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData.session?.access_token ?? "";
-  if (!token) {
-    toast.error(
-      <span>
-        Please{" "}
-        <a href="/login" className="underline font-medium">sign in</a>
-        {" "}or{" "}
-        <a href="/signup" className="underline font-medium">create an account</a>
-        {" "}to generate itineraries.
-      </span>
-    );
-    return;
-  }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token ?? "";
+    if (!token) {
+      toast.error(
+        <span>
+          Please{" "}
+          <a href="/login" className="underline font-medium">sign in</a>
+          {" "}or{" "}
+          <a href="/signup" className="underline font-medium">create an account</a>
+          {" "}to generate itineraries.
+        </span>
+      );
+      return;
+    }
     const numDays = Number(days) || 1;
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
     setLoading(true);
     try {
-      // Get the session token and pass it in the data payload so the
-      // server function can validate it with requireAuth().
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
       const trip: Trip = {
         id: newId(),
