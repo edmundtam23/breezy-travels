@@ -267,6 +267,12 @@ function SignupPage() {
                 Sign in
               </Link>
             </p>
+            <p className="text-center text-xs text-muted-foreground">
+              By creating an account, you agree to our{" "}
+              <Link to="/privacy" className="underline hover:text-foreground transition-colors">
+                Privacy Policy
+              </Link>
+            </p>
           </CardContent>
         </Card>
       </div>
