@@ -232,7 +232,7 @@ function UnauthenticatedHomepage() {
       <p className="mb-4 text-sm text-muted-foreground">
         Sample itinerary —{" "}
         <Link to="/signup" className="font-medium text-primary hover:underline">
-          sign up to generate your own
+          Sign up to generate your own!
         </Link>
       </p>
 
