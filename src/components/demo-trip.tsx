@@ -5,13 +5,53 @@
  * users. Mirrors the real trip-detail UI so visitors immediately understand
  * what Breezy Plans produces.
  *
- * Drop this anywhere — it has no props and no external data dependencies.
+ * Changes from v1:
+ *  - "Live demo" badge replaced with plain muted label text
+ *  - Stop thumbnails now show category icons instead of a generic MapPin
+ *  - Map panel uses a pre-generated static image (public/demo-map.png)
+ *    instead of the fake SVG grid
  */
 
-import { Clock, Bus, GripVertical, MapPin, Lightbulb } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Clock,
+  Bus,
+  GripVertical,
+  Lightbulb,
+  UtensilsCrossed,
+  Landmark,
+  Trees,
+  Palette,
+  MapPin,
+} from "lucide-react";
 
 // ── Static trip data ──────────────────────────────────────────────────────────
+
+// Category → lucide icon mapping. Mirrors the categories Gemini returns so
+// the real trip cards can adopt this pattern too when photo loading is added.
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  food: UtensilsCrossed,
+  restaurant: UtensilsCrossed,
+  "food market": UtensilsCrossed,
+  "street food": UtensilsCrossed,
+  sightseeing: Landmark,
+  landmark: Landmark,
+  museum: Landmark,
+  outdoors: Trees,
+  nature: Trees,
+  culture: Palette,
+  art: Palette,
+};
+
+function getCategoryIcon(tags: string[]): React.ElementType {
+  const needle = tags.join(" ").toLowerCase();
+  for (const [key, Icon] of Object.entries(CATEGORY_ICONS)) {
+    if (needle.includes(key)) return Icon;
+  }
+  return MapPin;
+}
 
 const DEMO_DAY = {
   label: "Day 1",
@@ -44,7 +84,7 @@ const DEMO_DAY = {
   ],
 };
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── StopCard ──────────────────────────────────────────────────────────────────
 
 function StopCard({
   stop,
@@ -55,6 +95,8 @@ function StopCard({
   index: number;
   isLast: boolean;
 }) {
+  const CategoryIcon = getCategoryIcon(stop.tags);
+
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       {/* Main row */}
@@ -64,9 +106,9 @@ function StopCard({
           <GripVertical className="h-4 w-4" />
         </div>
 
-        {/* Numbered thumbnail */}
+        {/* Category icon thumbnail — intentional placeholder, not a broken image */}
         <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted">
-          <MapPin className="h-5 w-5 text-muted-foreground/50" />
+          <CategoryIcon className="h-5 w-5 text-muted-foreground/50" />
           <span
             className={`absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background text-[10px] font-semibold ${
               index === 0
@@ -121,6 +163,45 @@ function StopCard({
   );
 }
 
+// ── Map panel (desktop only) ──────────────────────────────────────────────────
+
+function DemoMapPanel() {
+  return (
+    <div className="hidden md:flex flex-col rounded-xl border bg-muted/30 overflow-hidden">
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+          Map view
+        </span>
+      </div>
+
+      <div className="relative flex-1 min-h-[320px] overflow-hidden">
+        {/* Static pre-generated map — save public/demo-map.png from the
+            Maps Static API URL in the handoff doc, then commit it.        */}
+        <img
+          src="/demo-map.png"
+          alt="Map showing the Seoul foodie itinerary stops"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          // No onError handler needed — if the file is missing during dev,
+          // the browser shows a broken-image icon only in the map panel,
+          // which is clearly a dev-environment issue, not a product bug.
+        />
+
+        {/* Gradient + CTA overlay pinned to the bottom */}
+        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-t from-background/95 via-background/60 to-transparent pb-8 pt-20">
+          <p className="text-sm text-muted-foreground">
+            Sign up to explore stops on a live map
+          </p>
+          <Link to="/signup">
+            <Button size="sm" variant="outline">
+              Get started free
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function DemoTrip() {
@@ -154,10 +235,14 @@ export function DemoTrip() {
         ))}
       </div>
 
-      {/* "More stops" hint — implies there's more beyond the demo */}
+      {/* "More stops" hint */}
       <p className="mt-3 text-center text-xs text-muted-foreground/60">
         ··· 3 more stops on this day
       </p>
     </div>
   );
 }
+
+// Named export so index.tsx can import the map panel separately and place it
+// in the right column of the desktop grid without restructuring DemoTrip.
+export { DemoMapPanel };
