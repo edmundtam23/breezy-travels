@@ -289,6 +289,23 @@ function NewTripDialog() {
       toast.error("Add a quick prompt to start.");
       return;
     }
+
+  // Check auth before hitting the server — gives a clean UX instead of
+  // a raw Zod error when an unauthenticated user tries to generate.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token ?? "";
+  if (!token) {
+    toast.error(
+      <span>
+        Please{" "}
+        <a href="/login" className="underline font-medium">sign in</a>
+        {" "}or{" "}
+        <a href="/signup" className="underline font-medium">create an account</a>
+        {" "}to generate itineraries.
+      </span>
+    );
+    return;
+  }
     const numDays = Number(days) || 1;
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
@@ -296,8 +313,6 @@ function NewTripDialog() {
     try {
       // Get the session token and pass it in the data payload so the
       // server function can validate it with requireAuth().
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token ?? "";
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
       const trip: Trip = {
         id: newId(),
