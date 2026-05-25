@@ -26,6 +26,10 @@ import { signOut } from "@/lib/auth";
 import { getTheme, setTheme, nextTheme, type Theme } from "@/lib/theme";
 import type { User } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
+// ── NEW ───────────────────────────────────────────────────────────────────────
+import { DemoTrip, DemoMapPanel } from "@/components/demo-trip";
+import { DemoCta } from "@/components/demo-cta";
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,7 +92,6 @@ function useCurrentUser() {
   return user;
 }
 
-// Theme toggle icon — shows the CURRENT mode so user knows what they're on
 function ThemeIcon({ theme }: { theme: Theme }) {
   if (theme === "light") return <Sun className="h-4 w-4" />;
   if (theme === "dark") return <Moon className="h-4 w-4" />;
@@ -102,7 +105,6 @@ function ThemeToggle() {
     setThemeState(getTheme());
   }, []);
 
-  // Also listen for system preference changes when in system mode
   useEffect(() => {
     if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -176,12 +178,14 @@ function HomePage() {
           </div>
         </div>
       </header>
+
       <main className="mx-auto max-w-6xl px-6 py-10">
         <h1 className="text-3xl font-semibold tracking-tight">Your trips</h1>
         <p className="mt-2 text-muted-foreground">
           Plan day-by-day itineraries, reorder stops on a map, and catch tight commute
           windows before they catch you.
         </p>
+
         {!user && (
           <div className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
             <Link to="/signup" className="font-medium text-primary hover:underline">
@@ -194,8 +198,14 @@ function HomePage() {
             to save your trips across devices.
           </div>
         )}
+
         {trips.length === 0 ? (
-          <EmptyState />
+          // ── Show demo for logged-out users, empty state for logged-in ────────
+          !user ? (
+            <UnauthenticatedHomepage />
+          ) : (
+            <EmptyState />
+          )
         ) : (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {trips.map((t) => (
@@ -207,6 +217,50 @@ function HomePage() {
     </div>
   );
 }
+
+// ── NEW: Unauthenticated homepage with live demo ──────────────────────────────
+
+function UnauthenticatedHomepage() {
+  return (
+    /*
+     * `relative` + `overflow-hidden` gives the desktop sticky bar (`position:
+     * sticky; bottom: 0`) a proper scroll container to stick inside, so it
+     * anchors to the bottom of this section rather than the page.
+     */
+    <section className="relative mt-8 overflow-hidden">
+      {/* Sample itinerary label — plain text, no badge */}
+      <p className="mb-4 text-sm text-muted-foreground">
+        Sample itinerary —{" "}
+        <Link to="/signup" className="font-medium text-primary hover:underline">
+          Sign up to generate your own!
+        </Link>
+      </p>
+
+      {/*
+       * Desktop: two-column grid — trip card left, map placeholder right.
+       * Mobile: single column, trip card only (map is the native app view).
+       */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_380px]">
+
+        {/* Left: demo trip card */}
+        <div>
+          <DemoTrip />
+        </div>
+
+        {/* Right: static map — desktop only, rendered inside DemoMapPanel */}
+        <DemoMapPanel />
+      </div>
+
+      {/* CTA — floating pill on mobile, sticky bar on desktop */}
+      {/* Extra bottom padding on mobile so content doesn't hide behind the pill */}
+      <div className="pb-24 md:pb-0">
+        <DemoCta />
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -290,29 +344,25 @@ function NewTripDialog() {
       return;
     }
 
-  // Check auth before hitting the server — gives a clean UX instead of
-  // a raw Zod error when an unauthenticated user tries to generate.
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData.session?.access_token ?? "";
-  if (!token) {
-    toast.error(
-      <span>
-        Please{" "}
-        <a href="/login" className="underline font-medium">sign in</a>
-        {" "}or{" "}
-        <a href="/signup" className="underline font-medium">create an account</a>
-        {" "}to generate itineraries.
-      </span>
-    );
-    return;
-  }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token ?? "";
+    if (!token) {
+      toast.error(
+        <span>
+          Please{" "}
+          <a href="/login" className="underline font-medium">sign in</a>
+          {" "}or{" "}
+          <a href="/signup" className="underline font-medium">create an account</a>
+          {" "}to generate itineraries.
+        </span>
+      );
+      return;
+    }
     const numDays = Number(days) || 1;
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
     setLoading(true);
     try {
-      // Get the session token and pass it in the data payload so the
-      // server function can validate it with requireAuth().
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
       const trip: Trip = {
         id: newId(),
