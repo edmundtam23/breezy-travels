@@ -153,7 +153,7 @@ function HomePage() {
             <MapPin className="h-5 w-5 text-primary" />
             <span className="text-lg font-semibold">Breezy Plans</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {user ? (
               <>
                 <span className="text-sm text-muted-foreground hidden sm:block">
@@ -168,13 +168,13 @@ function HomePage() {
                 <Link to="/login">
                   <Button variant="outline" size="sm">Sign in</Button>
                 </Link>
-                <Link to="/signup">
+                <Link to="/signup" className="hidden sm:block">
                   <Button size="sm">Sign up</Button>
                 </Link>
               </>
             )}
             <ThemeToggle />
-            <NewTripDialog />
+            {user && <NewTripDialog />}
           </div>
         </div>
       </header>
@@ -232,7 +232,7 @@ function UnauthenticatedHomepage() {
       <p className="mb-4 text-sm text-muted-foreground">
         Sample itinerary —{" "}
         <Link to="/signup" className="font-medium text-primary hover:underline">
-          Sign up to generate your own!
+          sign up to generate your own
         </Link>
       </p>
 
