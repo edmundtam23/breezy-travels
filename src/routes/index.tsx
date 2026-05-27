@@ -389,10 +389,14 @@ function HomePage() {
       <Toaster />
       <header className="border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-2">
+          <Link
+            to="/"
+            onClick={() => setFilterCountry(null)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <MapPin className="h-5 w-5 text-primary" />
             <span className="text-lg font-semibold">Breezy Plans</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
             {user ? (
               <>
