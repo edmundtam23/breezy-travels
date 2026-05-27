@@ -72,7 +72,6 @@ type AiAction = "generateItinerary" | "generateBlurb";
 async function checkAndRecordAiRateLimit(userId: string, action: AiAction): Promise<void> {
   const db = getServiceClient();
   const cooldownMs = action === "generateItinerary" ? ITINERARY_COOLDOWN_MS : BLURB_COOLDOWN_MS;
-  const cooldownSec = cooldownMs / 1000;
   const column = action === "generateItinerary" ? "last_itinerary_at" : "last_blurb_at";
 
   // Fetch the current record for this user (if any).
@@ -191,7 +190,7 @@ export const generateItinerary = createServerFn({ method: "POST" })
             role: "user",
             parts: [
               {
-                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise). For each stop, set visitTip to a single sentence covering one of: whether reservations or tickets should be booked in advance, whether long queues are common and when to avoid them, or the best time of day to visit. Set visitTip to null if none of these apply.`,
+                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise). For each stop, set visitTip to a single sentence covering one of: whether reservations or tickets should be booked in advance, whether long queues are common and when to avoid them, or the best time of day to visit. Set visitTip to null if none of these apply. For each stop, set category to exactly one of: food, sights, outdoors, culture. Use food for restaurants, markets, cafes, and bars. Use sights for landmarks, museums, galleries, and historic sites. Use outdoors for parks, beaches, hikes, and natural areas. Use culture for theaters, festivals, temples, and local experiences.`,
               },
             ],
           },
@@ -224,7 +223,10 @@ export const generateItinerary = createServerFn({ method: "POST" })
                           time: { type: Type.STRING },
                           durationMin: { type: Type.NUMBER },
                           blurb: { type: Type.STRING },
-                          category: { type: Type.STRING },
+                          category: { 
+                            type: Type.STRING,
+                            enum: ["food", "sights", "outdoors", "culture"],
+                            description: "Category of the stop. Must be exactly one of the listed values."},
                           travelModeToNext: {
                             type: Type.STRING,
                             enum: ["WALKING", "DRIVING", "TRANSIT"],

@@ -1,3 +1,4 @@
+import { DestinationHero } from "@/components/destination-hero";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -187,7 +188,7 @@ function HomePage() {
         </p>
 
         {!user && (
-          <div className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+          <div className="hidden md:block mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
             <Link to="/signup" className="font-medium text-primary hover:underline">
               Create an account
             </Link>{" "}
@@ -229,12 +230,7 @@ function UnauthenticatedHomepage() {
      */
     <section className="relative mt-8 overflow-hidden">
       {/* Sample itinerary label — plain text, no badge */}
-      <p className="mb-4 text-sm text-muted-foreground">
-        Sample itinerary —{" "}
-        <Link to="/signup" className="font-medium text-primary hover:underline">
-          sign up to generate your own
-        </Link>
-      </p>
+      <DestinationHero />
 
       {/*
        * Desktop: two-column grid — trip card left, map placeholder right.

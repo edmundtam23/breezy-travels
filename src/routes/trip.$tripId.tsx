@@ -1,3 +1,4 @@
+import { StopThumbnail } from "@/components/stop-thumbnail";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useRef } from "react";
 import {
@@ -30,7 +31,6 @@ import {
   Footprints,
   GripVertical,
   Lightbulb,
-  MapPin,
   Plus,
   Sparkles,
   Star,
@@ -479,18 +479,21 @@ function SortableStop({
             <GripVertical className="h-4 w-4" />
           </button>
 
-          <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-            {stop.photoUrl ? (
+          {stop.photoUrl ? (
+            // Photo available (from Google Places): keep the existing image treatment.
+            // The numbered badge is rendered on top of the photo as before.
+            <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
               <img src={stop.photoUrl} alt={stop.name} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                <MapPin className="h-5 w-5" />
-              </div>
-            )}
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold text-background">
-              {index + 1}
-            </span>
-          </div>
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold text-background">
+                {index + 1}
+              </span>
+            </div>
+          ) : (
+            // No photo: StopThumbnail renders the category emoji + navy numbered badge.
+            // Uses stop.category from the Gemini response (e.g. "food", "sights").
+            // Falls back to 📍 pin for stops added manually or missing a category.
+            <StopThumbnail category={stop.category} index={index} />
+          )}
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
