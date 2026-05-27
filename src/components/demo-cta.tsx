@@ -83,7 +83,7 @@ function DesktopStickyBar() {
     >
       <p className="text-sm text-muted-foreground">
         <span className="font-medium text-foreground">Impressed?</span>{" "}
-        Itineraries like this take about 10 seconds to generate.
+        Itineraries like this take about 30 seconds to generate.
       </p>
       <div className="flex items-center gap-2 shrink-0">
         <Link to="/login">

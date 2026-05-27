@@ -37,15 +37,6 @@ export function DestinationHero() {
           </p>
         </div>
       </div>
-
-      <span
-        className={[
-          "shrink-0 text-[10px] font-medium px-2 py-1 rounded-full whitespace-nowrap",
-          "bg-[#1e3a8a] text-[#dbeafe]",
-        ].join(" ")}
-      >
-        AI generated
-      </span>
     </div>
   );
 }
