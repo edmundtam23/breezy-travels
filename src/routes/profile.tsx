@@ -153,11 +153,25 @@ function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
+  const AVATAR_COLORS = [
+  { bg: "bg-primary/10 text-primary ring-primary/20", label: "Blue" },
+  { bg: "bg-emerald-100 text-emerald-700 ring-emerald-200", label: "Green" },
+  { bg: "bg-amber-100 text-amber-700 ring-amber-200", label: "Amber" },
+  { bg: "bg-rose-100 text-rose-700 ring-rose-200", label: "Rose" },
+  { bg: "bg-purple-100 text-purple-700 ring-purple-200", label: "Purple" },
+  { bg: "bg-slate-100 text-slate-700 ring-slate-200", label: "Slate" },
+  ];
+
+  const [avatarColor, setAvatarColor] = useState(
+  user?.user_metadata?.avatar_color ?? AVATAR_COLORS[0].bg
+  );
+
   // Populate fields once user loads
   useEffect(() => {
     if (!user) return;
     setDisplayName(getDisplayName(user));
     setTravelStyle(user.user_metadata?.travel_style ?? "");
+    setAvatarColor(user.user_metadata?.avatar_color ?? AVATAR_COLORS[0].bg);
   }, [user]);
 
   // Redirect to login if not authenticated
@@ -199,6 +213,7 @@ function ProfilePage() {
         data: {
           display_name: displayName.trim(),
           travel_style: travelStyle.trim(),
+          avatar_color: avatarColor, 
         },
       });
       if (error) throw error;
@@ -257,7 +272,7 @@ function ProfilePage() {
         {/* Avatar + identity */}
         <div className="flex items-center gap-5 mb-10">
           <div className="relative">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-3xl font-medium text-primary ring-1 ring-primary/20">
+            <div className={`flex h-20 w-20 items-center justify-center rounded-full text-3xl font-medium ring-1 ${avatarColor}`}>
               {initials}
             </div>
             {/* Camera — placeholder for future upload */}
@@ -324,38 +339,68 @@ function ProfilePage() {
                 placeholder="e.g. I love slow travel, street food, and getting lost in local neighbourhoods…"
               />
             </div>
+            <div className="space-y-1.5">
+            <Label>Avatar color</Label>
+                <div className="flex gap-2">
+                    {AVATAR_COLORS.map((color) => (
+                    <button
+                        key={color.label}
+                        type="button"
+                        aria-label={color.label}
+                        onClick={() => { setAvatarColor(color.bg); setDirty(true); }}
+                        className={`h-7 w-7 rounded-full ring-1 ${color.bg} ${
+                        avatarColor === color.bg ? "ring-2 ring-offset-2 ring-foreground" : ""
+                        }`}
+                    >
+                        {avatarColor === color.bg && (
+                        <span className="flex items-center justify-center text-xs">✓</span>
+                        )}
+                    </button>
+                    ))}
+                </div>
+            </div>
           </div>
         </section>
 
         {/* Badges */}
         <section className="mb-10">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
             Badges
-          </p>
-          <div className="rounded-xl border bg-card p-5">
+        </p>
+        <div className="rounded-xl border bg-card p-5">
+            <TooltipProvider delayDuration={200}>
             <div className="flex flex-wrap gap-5">
-              {BADGES.map((badge) => {
+                {BADGES.map((badge) => {
                 const isEarned = badge.earned(stats);
                 return (
-                  <div key={badge.id} className="flex flex-col items-center gap-2" title={badge.description}>
-                    <div
-                      className={`flex h-16 w-16 items-center justify-center rounded-full text-2xl transition-opacity ${
-                        isEarned
-                          ? "bg-primary/10 ring-1 ring-primary/20"
-                          : "border border-dashed border-border opacity-40 grayscale"
-                      }`}
-                    >
-                      {isEarned ? badge.emoji : "🔒"}
-                    </div>
-                    <span className="text-center text-xs text-muted-foreground leading-tight max-w-[64px]">
-                      {badge.label}
-                    </span>
-                  </div>
+                    <Tooltip key={badge.id}>
+                    <TooltipTrigger asChild>
+                        <div className="flex flex-col items-center gap-2 cursor-default">
+                        <div
+                            className={`flex h-16 w-16 items-center justify-center rounded-full text-2xl transition-opacity ${
+                            isEarned
+                                ? "bg-primary/10 ring-1 ring-primary/20"
+                                : "border border-dashed border-border opacity-40 grayscale"
+                            }`}
+                        >
+                            {isEarned ? badge.emoji : "🔒"}
+                        </div>
+                        <span className="text-center text-xs text-muted-foreground leading-tight max-w-[64px]">
+                            {badge.label}
+                        </span>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                        <p className="font-medium">{badge.label}</p>
+                        <p className="opacity-80">{badge.description}</p>
+                    </TooltipContent>
+                    </Tooltip>
                 );
-              })}
+                })}
             </div>
+            </TooltipProvider>
             <p className="mt-4 text-xs text-muted-foreground">More badges coming soon.</p>
-          </div>
+        </div>
         </section>
 
         {/* Account (read-only) */}
