@@ -12,6 +12,7 @@
  *    instead of the fake SVG grid
  */
 
+import { StopThumbnail } from "@/components/stop-thumbnail";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,38 +21,9 @@ import {
   Bus,
   GripVertical,
   Lightbulb,
-  UtensilsCrossed,
-  Landmark,
-  Trees,
-  Palette,
-  MapPin,
 } from "lucide-react";
 
 // ── Static trip data ──────────────────────────────────────────────────────────
-
-// Category → lucide icon mapping. Mirrors the categories Gemini returns so
-// the real trip cards can adopt this pattern too when photo loading is added.
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  food: UtensilsCrossed,
-  restaurant: UtensilsCrossed,
-  "food market": UtensilsCrossed,
-  "street food": UtensilsCrossed,
-  sightseeing: Landmark,
-  landmark: Landmark,
-  museum: Landmark,
-  outdoors: Trees,
-  nature: Trees,
-  culture: Palette,
-  art: Palette,
-};
-
-function getCategoryIcon(tags: string[]): React.ElementType {
-  const needle = tags.join(" ").toLowerCase();
-  for (const [key, Icon] of Object.entries(CATEGORY_ICONS)) {
-    if (needle.includes(key)) return Icon;
-  }
-  return MapPin;
-}
 
 const DEMO_DAY = {
   label: "Day 1",
@@ -61,6 +33,7 @@ const DEMO_DAY = {
   stops: [
     {
       id: 1,
+      category: "food",
       time: "9:30 AM",
       durationMin: 120,
       name: "Gwangjang Market (광장시장)",
@@ -72,6 +45,7 @@ const DEMO_DAY = {
     },
     {
       id: 2,
+      category: "food",
       time: "12:30 PM",
       durationMin: 75,
       name: "Myeongdong Kyoja (명동교자)",
@@ -95,7 +69,6 @@ function StopCard({
   index: number;
   isLast: boolean;
 }) {
-  const CategoryIcon = getCategoryIcon(stop.tags);
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
@@ -106,19 +79,8 @@ function StopCard({
           <GripVertical className="h-4 w-4" />
         </div>
 
-        {/* Category icon thumbnail — intentional placeholder, not a broken image */}
-        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted">
-          <CategoryIcon className="h-5 w-5 text-muted-foreground/50" />
-          <span
-            className={`absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background text-[10px] font-semibold ${
-              index === 0
-                ? "bg-orange-500 text-white"
-                : "bg-foreground text-background"
-            }`}
-          >
-            {index + 1}
-          </span>
-        </div>
+        {/* Stop thumbnail — emoji + numbered badge */}
+        <StopThumbnail category={stop.category} index={index} />
 
         {/* Content */}
         <div className="flex-1 min-w-0">

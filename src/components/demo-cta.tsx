@@ -37,8 +37,9 @@ function MobileFloatingCta() {
       className="
         fixed bottom-5 left-4 right-4 z-50
         flex items-center justify-between gap-3
-        rounded-2xl border border-border/60
-        bg-background/80 backdrop-blur-md
+        rounded-2xl
+        bg-white dark:bg-[#1a1a18]
+        border border-[#d0cfc8] dark:border-[#444441]
         px-4 py-3 shadow-lg
         md:hidden
       "
@@ -48,7 +49,7 @@ function MobileFloatingCta() {
       <div className="min-w-0">
         <p className="text-sm font-medium leading-tight">Like what you see?</p>
         <p className="text-xs text-muted-foreground leading-tight mt-0.5">
-          Plan your own trip — free, takes 30 seconds.
+          Plan your own trip for free, it takes 30 seconds!
         </p>
       </div>
       <Link to="/signup" className="shrink-0">
