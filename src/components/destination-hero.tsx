@@ -32,7 +32,7 @@ export function DestinationHero() {
               to="/signup"
               className="underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-300"
             >
-              sign up to generate your own
+              Sign up to generate your own!
             </Link>
           </p>
         </div>
