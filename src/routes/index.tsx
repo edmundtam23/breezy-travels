@@ -39,6 +39,12 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
 import { DemoTrip, DemoMapPanel } from "@/components/demo-trip";
 import { DemoCta } from "@/components/demo-cta";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -132,10 +138,13 @@ function getDisplayName(user: SupabaseUser): string {
   return user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "?";
 }
 
+const DEFAULT_AVATAR_COLOR = "bg-primary/10 text-primary ring-primary/20";
+
 function UserInitials({ user }: { user: SupabaseUser }) {
   const initials = getDisplayName(user).slice(0, 1).toUpperCase();
+  const colorClass = user.user_metadata?.avatar_color ?? DEFAULT_AVATAR_COLOR;
   return (
-    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary ring-1 ring-primary/20 cursor-pointer select-none">
+    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ring-1 cursor-pointer select-none ${colorClass}`}>
       {initials}
     </div>
   );
