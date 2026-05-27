@@ -276,7 +276,27 @@ function EmptyState() {
 function TripCard({ trip }: { trip: Trip }) {
   const stopCount = trip.days.reduce((n, d) => n + d.stops.length, 0);
   return (
-    <Card className="group transition hover:shadow-md">
+    <Card className="group transition hover:shadow-md relative overflow-hidden">
+      {trip.countryCode && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%) rotate(30deg)",
+            fontSize: "101px",
+            lineHeight: 1,
+            opacity: 0.10,
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          {String.fromCodePoint(
+            ...[...trip.countryCode.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
+          )}
+        </span>
+      )}
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -364,6 +384,7 @@ function NewTripDialog() {
         id: newId(),
         title: res.title,
         destination: res.destination,
+        countryCode: res.countryCode,
         days: res.days.map((d) => ({
           id: newId(),
           title: d.title,

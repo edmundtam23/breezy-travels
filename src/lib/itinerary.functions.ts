@@ -147,6 +147,7 @@ const DaySchema = z.object({
 const ItinerarySchema = z.object({
   title: z.string(),
   destination: z.string(),
+  countryCode: z.string().length(2).optional(),
   days: z.array(DaySchema),
 });
 
@@ -190,7 +191,7 @@ export const generateItinerary = createServerFn({ method: "POST" })
             role: "user",
             parts: [
               {
-                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise). For each stop, set visitTip to a single sentence covering one of: whether reservations or tickets should be booked in advance, whether long queues are common and when to avoid them, or the best time of day to visit. Set visitTip to null if none of these apply. For each stop, set category to exactly one of: food, sights, outdoors, culture. Use food for restaurants, markets, cafes, and bars. Use sights for landmarks, museums, galleries, and historic sites. Use outdoors for parks, beaches, hikes, and natural areas. Use culture for theaters, festivals, temples, and local experiences.`,
+                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise). For each stop, set visitTip to a single sentence covering one of: whether reservations or tickets should be booked in advance, whether long queues are common and when to avoid them, or the best time of day to visit. Set visitTip to null if none of these apply. For each stop, set category to exactly one of: food, sights, outdoors, culture. Use food for restaurants, markets, cafes, and bars. Use sights for landmarks, museums, galleries, and historic sites. Use outdoors for parks, beaches, hikes, and natural areas. Use culture for theaters, festivals, temples, and local experiences. Also return a countryCode field with the ISO 3166-1 alpha-2 code (e.g. "BR", "JP", "PT") for the primary country of the destination.`,
               },
             ],
           },
@@ -204,6 +205,7 @@ export const generateItinerary = createServerFn({ method: "POST" })
             properties: {
               title: { type: Type.STRING },
               destination: { type: Type.STRING },
+              countryCode: {type: Type.STRING, description: "ISO 3166-1 alpha-2 country code for the primary destination, e.g. 'BR', 'JP', 'PT'"},
               days: {
                 type: Type.ARRAY,
                 items: {
@@ -245,7 +247,7 @@ export const generateItinerary = createServerFn({ method: "POST" })
                 },
               },
             },
-            required: ["title", "destination", "days"],
+            required: ["title", "destination", "days", "countryCode"],
           },
         },
       });

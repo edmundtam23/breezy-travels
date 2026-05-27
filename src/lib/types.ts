@@ -29,6 +29,7 @@ export interface Trip {
   id: string;
   title: string;
   destination: string;
+  countryCode?: string;   // ISO 3166-1 alpha-2, e.g. "BR", "JP", "PT"
   days: Day[];
   createdAt: string;
   updatedAt: string;
