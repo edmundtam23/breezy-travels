@@ -13,6 +13,12 @@ import { getTheme, setTheme, nextTheme, type Theme } from "@/lib/theme";
 import { Sun, Moon, Monitor } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { signOut } from "@/lib/auth";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -143,6 +149,15 @@ const BADGES: Badge[] = [
 
 // ── Profile page ──────────────────────────────────────────────────────────────
 
+const AVATAR_COLORS = [
+  { bg: "bg-primary/10 text-primary ring-primary/20", label: "Blue" },
+  { bg: "bg-emerald-100 text-emerald-700 ring-emerald-200", label: "Green" },
+  { bg: "bg-amber-100 text-amber-700 ring-amber-200", label: "Amber" },
+  { bg: "bg-rose-100 text-rose-700 ring-rose-200", label: "Rose" },
+  { bg: "bg-purple-100 text-purple-700 ring-purple-200", label: "Purple" },
+  { bg: "bg-slate-100 text-slate-700 ring-slate-200", label: "Slate" },
+  ];
+
 function ProfilePage() {
   const user = useCurrentUser();
   const trips = useTrips();
@@ -152,15 +167,6 @@ function ProfilePage() {
   const [travelStyle, setTravelStyle] = useState("");
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-
-  const AVATAR_COLORS = [
-  { bg: "bg-primary/10 text-primary ring-primary/20", label: "Blue" },
-  { bg: "bg-emerald-100 text-emerald-700 ring-emerald-200", label: "Green" },
-  { bg: "bg-amber-100 text-amber-700 ring-amber-200", label: "Amber" },
-  { bg: "bg-rose-100 text-rose-700 ring-rose-200", label: "Rose" },
-  { bg: "bg-purple-100 text-purple-700 ring-purple-200", label: "Purple" },
-  { bg: "bg-slate-100 text-slate-700 ring-slate-200", label: "Slate" },
-  ];
 
   const [avatarColor, setAvatarColor] = useState(
   user?.user_metadata?.avatar_color ?? AVATAR_COLORS[0].bg

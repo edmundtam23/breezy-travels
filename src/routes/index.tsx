@@ -39,12 +39,6 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
 import { DemoTrip, DemoMapPanel } from "@/components/demo-trip";
 import { DemoCta } from "@/components/demo-cta";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/")({
   head: () => ({
