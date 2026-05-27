@@ -1,8 +1,8 @@
 import { DestinationHero } from "@/components/destination-hero";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor } from "lucide-react";
+import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,6 +14,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,12 +35,10 @@ import { generateItinerary } from "@/lib/itinerary.functions";
 import { supabase } from "@/lib/supabase";
 import { signOut } from "@/lib/auth";
 import { getTheme, setTheme, nextTheme, type Theme } from "@/lib/theme";
-import type { User } from "@supabase/supabase-js";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Trip } from "@/lib/types";
-// ── NEW ───────────────────────────────────────────────────────────────────────
 import { DemoTrip, DemoMapPanel } from "@/components/demo-trip";
 import { DemoCta } from "@/components/demo-cta";
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -82,7 +90,7 @@ const FOCUS_OPTIONS = [
 type FocusValue = (typeof FOCUS_OPTIONS)[number]["value"];
 
 function useCurrentUser() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -92,6 +100,205 @@ function useCurrentUser() {
   }, []);
   return user;
 }
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
+
+function countryCodeToFlag(code: string) {
+  return String.fromCodePoint(
+    ...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
+  );
+}
+
+function countryCodeToName(code: string) {
+  try {
+    const display = new Intl.DisplayNames(["en"], { type: "region" });
+    return display.of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+function UserInitials({ user }: { user: SupabaseUser }) {
+  const initials = (user.email ?? "?").slice(0, 1).toUpperCase();
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary ring-1 ring-primary/20 cursor-pointer select-none">
+      {initials}
+    </div>
+  );
+}
+
+// ── Menu content shared between Popover and Sheet ────────────────────────────
+
+function AvatarMenuContent({
+  user,
+  trips,
+  onClose,
+  onSignOut,
+}: {
+  user: SupabaseUser;
+  trips: Trip[];
+  onClose: () => void;
+  onSignOut: () => void;
+}) {
+  const [showTrips, setShowTrips] = useState(false);
+
+  // Build country groups from trips that have a countryCode
+  const countryGroups = trips.reduce<Record<string, number>>((acc, t) => {
+    if (t.countryCode) {
+      acc[t.countryCode] = (acc[t.countryCode] ?? 0) + 1;
+    }
+    return acc;
+  }, {});
+  const countries = Object.entries(countryGroups).sort((a, b) =>
+    countryCodeToName(a[0]).localeCompare(countryCodeToName(b[0]))
+  );
+
+  if (showTrips) {
+    return (
+      <div className="w-56">
+        {/* Sub-menu header */}
+        <div className="flex items-center gap-2 border-b px-3 py-2">
+          <button
+            onClick={() => setShowTrips(false)}
+            className="rounded p-1 hover:bg-muted"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-medium">My trips</span>
+        </div>
+        <div className="py-1 max-h-64 overflow-y-auto">
+          {countries.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-muted-foreground">No trips yet.</p>
+          ) : (
+            countries.map(([code, count]) => (
+              <Link
+                key={code}
+                to="/"
+                onClick={onClose}
+                className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
+              >
+                <span className="text-base leading-none">{countryCodeToFlag(code)}</span>
+                <span className="flex-1">{countryCodeToName(code)}</span>
+                <span className="text-xs text-muted-foreground">{count}</span>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-56">
+      {/* User info header */}
+      <div className="flex items-center gap-3 border-b px-3 py-3">
+        <UserInitials user={user} />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{user.email?.split("@")[0]}</p>
+          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+        </div>
+      </div>
+
+      {/* Menu items */}
+      <div className="py-1">
+        <Link
+          to="/"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
+        >
+          <User className="h-4 w-4 text-muted-foreground" />
+          Profile
+        </Link>
+
+        <button
+          onClick={() => setShowTrips(true)}
+          className="flex w-full items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
+        >
+          <Briefcase className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1 text-left">My trips</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+
+        <Link
+          to="/"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
+        >
+          <Compass className="h-4 w-4 text-muted-foreground" />
+          Inspiration
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ── Responsive avatar menu ────────────────────────────────────────────────────
+
+function AvatarMenu({
+  user,
+  trips,
+  onSignOut,
+}: {
+  user: SupabaseUser;
+  trips: Trip[];
+  onSignOut: () => void;
+}) {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <button aria-label="Open menu">
+            <UserInitials user={user} />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-72 p-0">
+          <div className="pt-10">
+            <AvatarMenuContent
+              user={user}
+              trips={trips}
+              onClose={() => setOpen(false)}
+              onSignOut={onSignOut}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button aria-label="Open menu">
+          <UserInitials user={user} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={8} className="p-0">
+        <AvatarMenuContent
+          user={user}
+          trips={trips}
+          onClose={() => setOpen(false)}
+          onSignOut={onSignOut}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ── Theme toggle ──────────────────────────────────────────────────────────────
 
 function ThemeIcon({ theme }: { theme: Theme }) {
   if (theme === "light") return <Sun className="h-4 w-4" />;
@@ -135,10 +342,13 @@ function ThemeToggle() {
   );
 }
 
+// ── HomePage ──────────────────────────────────────────────────────────────────
+
 function HomePage() {
   const trips = useTrips();
   const user = useCurrentUser();
   const navigate = useNavigate();
+  const [newTripOpen, setNewTripOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -157,12 +367,15 @@ function HomePage() {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <span className="text-sm text-muted-foreground hidden sm:block">
-                  {user.email?.split("@")[0]}
-                </span>
                 <Button variant="outline" size="sm" onClick={handleSignOut}>
                   Sign out
                 </Button>
+                <ThemeToggle />
+                {/* New trip button — desktop only */}
+                <div className="hidden sm:flex">
+                  <NewTripDialog open={newTripOpen} onOpenChange={setNewTripOpen} />
+                </div>
+                <AvatarMenu user={user} trips={trips} onSignOut={handleSignOut} />
               </>
             ) : (
               <>
@@ -172,15 +385,14 @@ function HomePage() {
                 <Link to="/signup" className="hidden sm:block">
                   <Button size="sm">Sign up</Button>
                 </Link>
+                <ThemeToggle />
               </>
             )}
-            <ThemeToggle />
-            {user && <NewTripDialog />}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main className="relative mx-auto max-w-6xl px-6 py-10">
         <h1 className="text-3xl font-semibold tracking-tight">Your trips</h1>
         <p className="mt-2 text-muted-foreground">
           Plan day-by-day itineraries, reorder stops on a map, and catch tight commute
@@ -201,11 +413,10 @@ function HomePage() {
         )}
 
         {trips.length === 0 ? (
-          // ── Show demo for logged-out users, empty state for logged-in ────────
           !user ? (
             <UnauthenticatedHomepage />
           ) : (
-            <EmptyState />
+            <EmptyState onNewTrip={() => setNewTripOpen(true)} />
           )
         ) : (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -214,41 +425,39 @@ function HomePage() {
             ))}
           </div>
         )}
+
+        {/* FAB — mobile only, logged-in only */}
+        {user && (
+          <button
+            onClick={() => setNewTripOpen(true)}
+            aria-label="New trip"
+            className="sm:hidden fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-primary/90 active:scale-95"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        )}
+
+        {/* Hidden dialog driven by FAB on mobile */}
+        <div className="sm:hidden">
+          <NewTripDialog open={newTripOpen} onOpenChange={setNewTripOpen} />
+        </div>
       </main>
     </div>
   );
 }
 
-// ── NEW: Unauthenticated homepage with live demo ──────────────────────────────
+// ── Unauthenticated homepage ──────────────────────────────────────────────────
 
 function UnauthenticatedHomepage() {
   return (
-    /*
-     * `relative` + `overflow-hidden` gives the desktop sticky bar (`position:
-     * sticky; bottom: 0`) a proper scroll container to stick inside, so it
-     * anchors to the bottom of this section rather than the page.
-     */
     <section className="relative mt-8 overflow-hidden">
-      {/* Sample itinerary label — plain text, no badge */}
       <DestinationHero />
-
-      {/*
-       * Desktop: two-column grid — trip card left, map placeholder right.
-       * Mobile: single column, trip card only (map is the native app view).
-       */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_380px]">
-
-        {/* Left: demo trip card */}
         <div>
           <DemoTrip />
         </div>
-
-        {/* Right: static map — desktop only, rendered inside DemoMapPanel */}
         <DemoMapPanel />
       </div>
-
-      {/* CTA — floating pill on mobile, sticky bar on desktop */}
-      {/* Extra bottom padding on mobile so content doesn't hide behind the pill */}
       <div className="pb-24 md:pb-0">
         <DemoCta />
       </div>
@@ -256,9 +465,9 @@ function UnauthenticatedHomepage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Empty state ───────────────────────────────────────────────────────────────
 
-function EmptyState() {
+function EmptyState({ onNewTrip }: { onNewTrip: () => void }) {
   return (
     <div className="mt-12 rounded-xl border border-dashed p-12 text-center">
       <Calendar className="mx-auto h-10 w-10 text-muted-foreground" />
@@ -267,11 +476,15 @@ function EmptyState() {
         Generate one with AI or start from a blank slate.
       </p>
       <div className="mt-6">
-        <NewTripDialog />
+        <Button onClick={onNewTrip}>
+          <Plus className="mr-1 h-4 w-4" /> New trip
+        </Button>
       </div>
     </div>
   );
 }
+
+// ── Trip card ─────────────────────────────────────────────────────────────────
 
 function TripCard({ trip }: { trip: Trip }) {
   const stopCount = trip.days.reduce((n, d) => n + d.stops.length, 0);
@@ -333,8 +546,15 @@ function TripCard({ trip }: { trip: Trip }) {
   );
 }
 
-function NewTripDialog() {
-  const [open, setOpen] = useState(false);
+// ── New trip dialog ───────────────────────────────────────────────────────────
+
+function NewTripDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const [tab, setTab] = useState("ai");
   const [prompt, setPrompt] = useState("");
   const [days, setDays] = useState<number | "">(2);
@@ -345,21 +565,20 @@ function NewTripDialog() {
   const navigate = useNavigate();
   const aiFn = useServerFn(generateItinerary);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setPrompt("");
     setDays(2);
     setTitle("");
     setDestination("");
     setLoading(false);
     setFocus("mix");
-  };
+  }, []);
 
   const handleAi = async () => {
     if (!prompt.trim()) {
       toast.error("Add a quick prompt to start.");
       return;
     }
-
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token ?? "";
     if (!token) {
@@ -407,7 +626,7 @@ function NewTripDialog() {
         updatedAt: new Date().toISOString(),
       };
       await saveTrip(trip);
-      setOpen(false);
+      onOpenChange(false);
       reset();
       navigate({ to: "/trip/$tripId", params: { tripId: trip.id } });
     } catch (e) {
@@ -436,13 +655,13 @@ function NewTripDialog() {
       updatedAt: new Date().toISOString(),
     };
     await saveTrip(trip);
-    setOpen(false);
+    onOpenChange(false);
     reset();
     navigate({ to: "/trip/$tripId", params: { tripId: trip.id } });
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-1 h-4 w-4" /> New trip
