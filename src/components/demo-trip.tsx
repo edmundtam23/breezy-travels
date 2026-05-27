@@ -15,7 +15,6 @@
 import { StopThumbnail } from "@/components/stop-thumbnail";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Clock,
   Bus,
@@ -180,9 +179,6 @@ export function DemoTrip() {
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{DEMO_DAY.summary}</p>
         </div>
-        <Badge variant="secondary" className="shrink-0 mt-0.5">
-          AI generated
-        </Badge>
       </div>
 
       {/* Stop cards */}

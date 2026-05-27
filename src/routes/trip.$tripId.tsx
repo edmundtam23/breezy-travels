@@ -20,7 +20,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
   ArrowLeft,
-  Bike,
   Bus,
   Car,
   Check,
@@ -517,8 +516,8 @@ function SortableStop({
               <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{stop.blurb}</p>
             )}
             {stop.visitTip && (
-              <div style={{marginTop: "6px", display: "flex", alignItems: "flex-start", gap: "6px", borderRadius: "6px", background: "#fffbeb", padding: "6px 8px", fontSize: "12px", color: "#92400e"}}>
-                <Lightbulb style={{marginTop: "2px", height: "12px", width: "12px", flexShrink: 0}} />
+              <div className="mt-1.5 flex items-start gap-1.5 rounded-md bg-amber-50 dark:bg-amber-950/40 px-2 py-1.5 text-xs text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60">
+                <Lightbulb className="mt-px h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
                 <span>{stop.visitTip}</span>
               </div>
             )}
