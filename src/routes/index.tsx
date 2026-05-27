@@ -2,7 +2,7 @@ import { DestinationHero } from "@/components/destination-hero";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass } from "lucide-react";
+import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -128,8 +128,12 @@ function countryCodeToName(code: string) {
   }
 }
 
+function getDisplayName(user: SupabaseUser): string {
+  return user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "?";
+}
+
 function UserInitials({ user }: { user: SupabaseUser }) {
-  const initials = (user.email ?? "?").slice(0, 1).toUpperCase();
+  const initials = getDisplayName(user).slice(0, 1).toUpperCase();
   return (
     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary ring-1 ring-primary/20 cursor-pointer select-none">
       {initials}
@@ -144,15 +148,16 @@ function AvatarMenuContent({
   trips,
   onClose,
   onSignOut,
+  onFilterCountry,
 }: {
   user: SupabaseUser;
   trips: Trip[];
   onClose: () => void;
   onSignOut: () => void;
+  onFilterCountry: (code: string | null) => void;
 }) {
   const [showTrips, setShowTrips] = useState(false);
 
-  // Build country groups from trips that have a countryCode
   const countryGroups = trips.reduce<Record<string, number>>((acc, t) => {
     if (t.countryCode) {
       acc[t.countryCode] = (acc[t.countryCode] ?? 0) + 1;
@@ -166,7 +171,6 @@ function AvatarMenuContent({
   if (showTrips) {
     return (
       <div className="w-56">
-        {/* Sub-menu header */}
         <div className="flex items-center gap-2 border-b px-3 py-2">
           <button
             onClick={() => setShowTrips(false)}
@@ -178,22 +182,29 @@ function AvatarMenuContent({
           <span className="text-sm font-medium">My trips</span>
         </div>
         <div className="py-1 max-h-64 overflow-y-auto">
-          {countries.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-muted-foreground">No trips yet.</p>
-          ) : (
-            countries.map(([code, count]) => (
-              <Link
-                key={code}
-                to="/"
-                onClick={onClose}
-                className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
-              >
-                <span className="text-base leading-none">{countryCodeToFlag(code)}</span>
-                <span className="flex-1">{countryCodeToName(code)}</span>
-                <span className="text-xs text-muted-foreground">{count}</span>
-              </Link>
-            ))
-          )}
+          {/* All Trips */}
+          <button
+            onClick={() => { onFilterCountry(null); onClose(); }}
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
+          >
+            <span className="text-base leading-none">🌍</span>
+            <span className="flex-1 text-left">All Trips</span>
+            <span className="text-xs text-muted-foreground">{trips.length}</span>
+          </button>
+          {/* Divider */}
+          {countries.length > 0 && <div className="my-1 border-t" />}
+          {/* Per-country */}
+          {countries.map(([code, count]) => (
+            <button
+              key={code}
+              onClick={() => { onFilterCountry(code); onClose(); }}
+              className="flex w-full items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
+            >
+              <span className="text-base leading-none">{countryCodeToFlag(code)}</span>
+              <span className="flex-1 text-left">{countryCodeToName(code)}</span>
+              <span className="text-xs text-muted-foreground">{count}</span>
+            </button>
+          ))}
         </div>
       </div>
     );
@@ -201,19 +212,17 @@ function AvatarMenuContent({
 
   return (
     <div className="w-56">
-      {/* User info header */}
       <div className="flex items-center gap-3 border-b px-3 py-3">
         <UserInitials user={user} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{user.email?.split("@")[0]}</p>
+          <p className="truncate text-sm font-medium">{getDisplayName(user)}</p>
           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
         </div>
       </div>
 
-      {/* Menu items */}
       <div className="py-1">
         <Link
-          to="/"
+          to="/profile"
           onClick={onClose}
           className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
         >
@@ -226,7 +235,7 @@ function AvatarMenuContent({
           className="flex w-full items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
         >
           <Briefcase className="h-4 w-4 text-muted-foreground" />
-          <span className="flex-1 text-left">My trips</span>
+          <span className="flex-1 text-left">My Trips</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
 
@@ -239,6 +248,17 @@ function AvatarMenuContent({
           Inspiration
         </Link>
       </div>
+
+      {/* Divider + sign out */}
+      <div className="border-t py-1">
+        <button
+          onClick={() => { onClose(); onSignOut(); }}
+          className="flex w-full items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
+      </div>
     </div>
   );
 }
@@ -249,10 +269,12 @@ function AvatarMenu({
   user,
   trips,
   onSignOut,
+  onFilterCountry,
 }: {
   user: SupabaseUser;
   trips: Trip[];
   onSignOut: () => void;
+  onFilterCountry: (code: string | null) => void;
 }) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
@@ -272,6 +294,7 @@ function AvatarMenu({
               trips={trips}
               onClose={() => setOpen(false)}
               onSignOut={onSignOut}
+              onFilterCountry={onFilterCountry}
             />
           </div>
         </SheetContent>
@@ -292,6 +315,7 @@ function AvatarMenu({
           trips={trips}
           onClose={() => setOpen(false)}
           onSignOut={onSignOut}
+          onFilterCountry={onFilterCountry}
         />
       </PopoverContent>
     </Popover>
@@ -349,11 +373,16 @@ function HomePage() {
   const user = useCurrentUser();
   const navigate = useNavigate();
   const [newTripOpen, setNewTripOpen] = useState(false);
+  const [filterCountry, setFilterCountry] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/" });
   };
+
+  const visibleTrips = filterCountry
+    ? trips.filter((t) => t.countryCode === filterCountry)
+    : trips;
 
   return (
     <div className="min-h-screen bg-background">
@@ -367,15 +396,17 @@ function HomePage() {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <Button variant="outline" size="sm" onClick={handleSignOut}>
-                  Sign out
-                </Button>
                 <ThemeToggle />
                 {/* New trip button — desktop only */}
                 <div className="hidden sm:flex">
                   <NewTripDialog open={newTripOpen} onOpenChange={setNewTripOpen} />
                 </div>
-                <AvatarMenu user={user} trips={trips} onSignOut={handleSignOut} />
+                <AvatarMenu
+                  user={user}
+                  trips={trips}
+                  onSignOut={handleSignOut}
+                  onFilterCountry={setFilterCountry}
+                />
               </>
             ) : (
               <>
@@ -393,7 +424,24 @@ function HomePage() {
       </header>
 
       <main className="relative mx-auto max-w-6xl px-6 py-10">
-        <h1 className="text-3xl font-semibold tracking-tight">Your trips</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Your trips</h1>
+            {filterCountry && (
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Filtered by {countryCodeToFlag(filterCountry)} {countryCodeToName(filterCountry)}
+                </span>
+                <button
+                  onClick={() => setFilterCountry(null)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
         <p className="mt-2 text-muted-foreground">
           Plan day-by-day itineraries, reorder stops on a map, and catch tight commute
           windows before they catch you.
@@ -420,27 +468,36 @@ function HomePage() {
           )
         ) : (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {trips.map((t) => (
+            {visibleTrips.map((t) => (
               <TripCard key={t.id} trip={t} />
             ))}
+            {visibleTrips.length === 0 && (
+              <p className="col-span-full text-sm text-muted-foreground">
+                No trips found for {countryCodeToName(filterCountry!)}.
+              </p>
+            )}
           </div>
         )}
 
         {/* FAB — mobile only, logged-in only */}
         {user && (
-          <button
-            onClick={() => setNewTripOpen(true)}
-            aria-label="New trip"
-            className="sm:hidden fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-primary/90 active:scale-95"
-          >
-            <Plus className="h-6 w-6" />
-          </button>
+          <>
+            <button
+              onClick={() => setNewTripOpen(true)}
+              aria-label="New trip"
+              className="sm:hidden fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-primary/90 active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+            </button>
+            {/* Dialog controlled by FAB — rendered once, no trigger button */}
+            <Dialog open={newTripOpen} onOpenChange={setNewTripOpen}>
+              <NewTripDialogContent
+                open={newTripOpen}
+                onOpenChange={setNewTripOpen}
+              />
+            </Dialog>
+          </>
         )}
-
-        {/* Hidden dialog driven by FAB on mobile */}
-        <div className="sm:hidden">
-          <NewTripDialog open={newTripOpen} onOpenChange={setNewTripOpen} />
-        </div>
       </main>
     </div>
   );
@@ -547,8 +604,11 @@ function TripCard({ trip }: { trip: Trip }) {
 }
 
 // ── New trip dialog ───────────────────────────────────────────────────────────
+// Split into two parts:
+// - NewTripDialog: includes the DialogTrigger (used on desktop in the nav)
+// - NewTripDialogContent: just the inner content (used by the FAB-controlled Dialog on mobile)
 
-function NewTripDialog({
+function NewTripDialogContent({
   open,
   onOpenChange,
 }: {
@@ -661,119 +721,131 @@ function NewTripDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
+    <DialogContent className="sm:max-w-xl">
+      <DialogHeader>
+        <DialogTitle>New trip</DialogTitle>
+        <DialogDescription>Generate a draft with AI or start blank.</DialogDescription>
+      </DialogHeader>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="ai">
+            <Sparkles className="mr-1 h-4 w-4" /> AI draft
+          </TabsTrigger>
+          <TabsTrigger value="blank">Manual</TabsTrigger>
+        </TabsList>
+        <TabsContent value="ai" className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="prompt">Trip idea</Label>
+            <Textarea
+              id="prompt"
+              rows={3}
+              placeholder="e.g. 2 days in San Francisco, foodie & murals focus"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Trip focus</Label>
+            <div className="flex flex-wrap gap-2 sm:justify-center">
+              {FOCUS_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFocus(option.value)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                    focus === option.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="days-ai">Days</Label>
+            <Input
+              id="days-ai"
+              type="number"
+              min={1}
+              max={14}
+              value={days}
+              onChange={(e) => {
+                let value = e.target.value === "" ? "" : Number(e.target.value);
+                if (typeof value === "number" && value > 14) value = 14;
+                if (typeof value === "number" && value < 1) value = 1;
+                setDays(value);
+              }}
+              onFocus={(e) => e.target.select()}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAi} disabled={loading}>
+              {loading ? "Generating…" : "Generate itinerary"}
+            </Button>
+          </DialogFooter>
+        </TabsContent>
+        <TabsContent value="blank" className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              placeholder="Weekend in Lisbon"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dest">Destination</Label>
+            <Input
+              id="dest"
+              placeholder="Lisbon, Portugal"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="days-b">Days</Label>
+            <Input
+              id="days-b"
+              type="number"
+              min={1}
+              max={14}
+              value={days}
+              onChange={(e) => {
+                let value = e.target.value === "" ? "" : Number(e.target.value);
+                if (typeof value === "number" && value > 14) value = 14;
+                if (typeof value === "number" && value < 1) value = 1;
+                setDays(value);
+              }}
+              onFocus={(e) => e.target.select()}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={handleBlank}>Create trip</Button>
+          </DialogFooter>
+        </TabsContent>
+      </Tabs>
+    </DialogContent>
+  );
+}
+
+function NewTripDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>
+        <Button onClick={() => onOpenChange(true)}>
           <Plus className="mr-1 h-4 w-4" /> New trip
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>New trip</DialogTitle>
-          <DialogDescription>Generate a draft with AI or start blank.</DialogDescription>
-        </DialogHeader>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ai">
-              <Sparkles className="mr-1 h-4 w-4" /> AI draft
-            </TabsTrigger>
-            <TabsTrigger value="blank">Manual</TabsTrigger>
-          </TabsList>
-          <TabsContent value="ai" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="prompt">Trip idea</Label>
-              <Textarea
-                id="prompt"
-                rows={3}
-                placeholder="e.g. 2 days in San Francisco, foodie & murals focus"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Trip focus</Label>
-              <div className="flex flex-wrap gap-2 sm:justify-center">
-                {FOCUS_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setFocus(option.value)}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
-                      focus === option.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="days-ai">Days</Label>
-              <Input
-                id="days-ai"
-                type="number"
-                min={1}
-                max={14}
-                value={days}
-                onChange={(e) => {
-                  let value = e.target.value === "" ? "" : Number(e.target.value);
-                  if (typeof value === "number" && value > 14) value = 14;
-                  if (typeof value === "number" && value < 1) value = 1;
-                  setDays(value);
-                }}
-                onFocus={(e) => e.target.select()}
-              />
-            </div>
-            <DialogFooter>
-              <Button onClick={handleAi} disabled={loading}>
-                {loading ? "Generating…" : "Generate itinerary"}
-              </Button>
-            </DialogFooter>
-          </TabsContent>
-          <TabsContent value="blank" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                placeholder="Weekend in Lisbon"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dest">Destination</Label>
-              <Input
-                id="dest"
-                placeholder="Lisbon, Portugal"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="days-b">Days</Label>
-              <Input
-                id="days-b"
-                type="number"
-                min={1}
-                max={14}
-                value={days}
-                onChange={(e) => {
-                  let value = e.target.value === "" ? "" : Number(e.target.value);
-                  if (typeof value === "number" && value > 14) value = 14;
-                  if (typeof value === "number" && value < 1) value = 1;
-                  setDays(value);
-                }}
-                onFocus={(e) => e.target.select()}
-              />
-            </div>
-            <DialogFooter>
-              <Button onClick={handleBlank}>Create trip</Button>
-            </DialogFooter>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
+      <NewTripDialogContent open={open} onOpenChange={onOpenChange} />
     </Dialog>
   );
 }
