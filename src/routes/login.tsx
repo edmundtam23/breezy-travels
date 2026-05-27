@@ -34,7 +34,7 @@ function LoginPage() {
         (win.turnstile as { render: (el: HTMLElement, opts: object) => void }).render(
           turnstileRef.current,
           {
-            sitekey: "0x4AAAAAADUnxV6uBAyCZ9ly",
+            sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA",
             callback: (token: string) => setCaptchaToken(token),
             "expired-callback": () => setCaptchaToken(null),
           }
