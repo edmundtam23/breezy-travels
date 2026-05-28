@@ -388,7 +388,7 @@ function HomePage() {
     : trips;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Toaster />
       <header className="border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
@@ -430,7 +430,7 @@ function HomePage() {
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-6xl px-6 py-10">
+      <main className="relative flex-1 mx-auto max-w-6xl px-6 py-10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Your trips</h1>
@@ -506,10 +506,23 @@ function HomePage() {
           </>
         )}
       </main>
+      {/* Footer */}
+      <footer className="border-t mt-auto">
+        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">© 2026 Breezy Plans</p>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/privacy"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Privacy Policy
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
-
 // ── Unauthenticated homepage ──────────────────────────────────────────────────
 
 function UnauthenticatedHomepage() {
