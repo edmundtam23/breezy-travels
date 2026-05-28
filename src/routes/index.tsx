@@ -380,23 +380,6 @@ function HomePage() {
   // Don't render the trips/demo split until auth is resolved
   const authResolved = user !== "loading";
 
-  // In JSX, replace the existing conditional block:
-  {!authResolved ? (
-    null  // or a skeleton — see note below
-  ) : trips.length === 0 ? (
-    !user ? (
-      <UnauthenticatedHomepage />
-    ) : (
-      <EmptyState onNewTrip={() => setNewTripOpen(true)} />
-    )
-  ) : (
-    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {visibleTrips.map((t) => (
-        <TripCard key={t.id} trip={t} />
-      ))}
-    </div>
-  )}
-
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/" });
@@ -486,7 +469,13 @@ function HomePage() {
           </div>
         )}
 
-        {trips.length === 0 ? (
+        {!authResolved ? (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-36 rounded-xl border bg-muted/30 animate-pulse" />
+            ))}
+          </div>
+        ) : trips.length === 0 ? (
           !user ? (
             <UnauthenticatedHomepage />
           ) : (
@@ -506,7 +495,7 @@ function HomePage() {
         )}
 
         {/* FAB — mobile only, logged-in only */}
-        {user && (
+        {user && user !== "loading" && (
           <>
             <button
               onClick={() => setNewTripOpen(true)}
