@@ -90,7 +90,7 @@ const FOCUS_OPTIONS = [
 type FocusValue = (typeof FOCUS_OPTIONS)[number]["value"];
 
 function useCurrentUser() {
-  const [user, setUser] = useState<SupabaseUser | null | "loading">("loading");
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -377,25 +377,6 @@ function HomePage() {
   const navigate = useNavigate();
   const [newTripOpen, setNewTripOpen] = useState(false);
   const [filterCountry, setFilterCountry] = useState<string | null>(null);
-  // Don't render the trips/demo split until auth is resolved
-  const authResolved = user !== "loading";
-
-  // In JSX, replace the existing conditional block:
-  {!authResolved ? (
-    null  // or a skeleton — see note below
-  ) : trips.length === 0 ? (
-    !user ? (
-      <UnauthenticatedHomepage />
-    ) : (
-      <EmptyState onNewTrip={() => setNewTripOpen(true)} />
-    )
-  ) : (
-    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {visibleTrips.map((t) => (
-        <TripCard key={t.id} trip={t} />
-      ))}
-    </div>
-  )}
 
   const handleSignOut = async () => {
     await signOut();
@@ -420,7 +401,7 @@ function HomePage() {
             <span className="text-lg font-semibold">Breezy Plans</span>
           </Link>
           <div className="flex items-center gap-2">
-            {user && user !== "loading" ? (
+            {user ? (
               <>
                 <ThemeToggle />
                 {/* New trip button — desktop only */}
@@ -473,7 +454,7 @@ function HomePage() {
           windows before they catch you.
         </p>
 
-        {authResolved && !user && (
+        {!user && (
           <div className="hidden md:block mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
             <Link to="/signup" className="font-medium text-primary hover:underline">
               Create an account

@@ -101,25 +101,25 @@ function deleteLocalTrip(id: string) {
 }
  
 // ── Public hooks & functions ───────────────────────────────────
-let _tripCache: Trip[] = [];
-
+ 
 export function useTrips() {
-  const [trips, setTrips] = useState<Trip[]>(_tripCache); // start from cache
+  const [trips, setTrips] = useState<Trip[]>([]);
  
   useEffect(() => {
     // Load from Supabase if logged in, otherwise localStorage
     fetchTripsFromSupabase().then((remoteTrips) => {
-      const result = remoteTrips.length > 0 ? remoteTrips : readLocal();
-      _tripCache = result;         // keep cache warm
-      setTrips(result);
+      if (remoteTrips.length > 0) {
+        setTrips(remoteTrips);
+      } else {
+        setTrips(readLocal());
+      }
     });
  
     // Listen for local changes
     const handler = () => {
       fetchTripsFromSupabase().then((remoteTrips) => {
-        const result = remoteTrips.length > 0 ? remoteTrips : readLocal();
-        _tripCache = result;
-        setTrips(result);
+        if (remoteTrips.length > 0) setTrips(remoteTrips);
+        else setTrips(readLocal());
       });
     };
     window.addEventListener("itineraries:changed", handler);
