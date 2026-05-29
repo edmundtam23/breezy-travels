@@ -5,9 +5,10 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
   "alias": {
-    "#tanstack-router-entry": "./dist/server/assets/router-Di4NrLPR.js",
-    "#tanstack-start-entry": "./dist/server/assets/start-BFFNhTMt.js",
-    "tanstack-start-manifest:v": "./dist/server/assets/_tanstack-start-manifest_v-CqH9q-tD.js"
+    "#tanstack-router-entry": "./dist/server/router-entry.js",
+    "#tanstack-start-entry": "./dist/server/start-entry.js",
+    "tanstack-start-manifest:v": "./dist/server/start-manifest.js"
+  }
   },
   "unsafe": {
     "bindings": [
