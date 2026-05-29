@@ -266,7 +266,7 @@ function AvatarMenuContent({
   );
 }
 
-// ── Responsive avatar menu ────────────────────────────────────────────────────
+// ── Responsive avatar menu ───────────────────────────────────────────────────
 
 function AvatarMenu({
   user,
