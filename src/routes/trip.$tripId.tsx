@@ -56,7 +56,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { useTrip, useUpdateTrip, newId } from "@/lib/storage";
+import { useTrips, useUpdateTrip, newId } from "@/lib/storage";
 import type { Stop, TravelMode, Trip, Day } from "@/lib/types";
 import { MapPanel, PlaceSearchInput } from "@/components/map-panel";
 import { MapsProvider } from "@/components/maps-provider";
@@ -70,13 +70,22 @@ export const Route = createFileRoute("/trip/$tripId")({
 
 function TripBuilder() {
   const { tripId } = Route.useParams();
-  const trip = useTrip(tripId);
+  const trips = useTrips();
+  const trip = trips?.find((t) => t.id === tripId);
   const update = useUpdateTrip(tripId);
   const navigate = useNavigate();
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
   // Single collapsed state controls both map and day header on mobile
   const [collapsed, setCollapsed] = useState(false);
+
+  if (trips === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading trip…</p>
+      </div>
+    );
+  }
 
   if (!trip) {
     return (

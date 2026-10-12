@@ -102,8 +102,10 @@ function deleteLocalTrip(id: string) {
  
 // ── Public hooks & functions ───────────────────────────────────
  
-export function useTrips() {
-  const [trips, setTrips] = useState<Trip[]>([]);
+// Returns null while the initial load is in flight so callers can
+// distinguish "loading" from "no trips" and avoid flashing an empty state.
+export function useTrips(): Trip[] | null {
+  const [trips, setTrips] = useState<Trip[] | null>(null);
  
   useEffect(() => {
     // Load from Supabase if logged in, otherwise localStorage
@@ -142,7 +144,7 @@ export function useTrips() {
  
 export function useTrip(id: string | undefined) {
   const trips = useTrips();
-  return trips.find((t) => t.id === id);
+  return trips?.find((t) => t.id === id);
 }
  
 export async function saveTrip(trip: Trip) {

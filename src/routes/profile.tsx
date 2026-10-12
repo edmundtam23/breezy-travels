@@ -149,7 +149,7 @@ const AVATAR_COLORS = [
 
 function ProfilePage() {
   const { status, user } = useAuth();
-  const trips = useTrips();
+  const trips = useTrips() ?? [];
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState("");

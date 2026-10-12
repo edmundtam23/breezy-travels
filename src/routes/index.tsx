@@ -408,7 +408,7 @@ function HomePage() {
     ? trips.filter((t) => t.countryCode === filterCountry)
     : trips;
 
-  if (status === "loading") {
+  if (status === "loading" || trips === null) {
     return <HomePageSkeleton />;
   }
 
