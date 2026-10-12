@@ -1,1 +1,189 @@
-aW1wb3J0ICIuL2xpYi9lcnJvci1jYXB0dXJlIjsKCmltcG9ydCB7IGNvbnN1bWVMYXN0Q2FwdHVyZWRFcnJvciB9IGZyb20gIi4vbGliL2Vycm9yLWNhcHR1cmUiOwppbXBvcnQgeyByZW5kZXJFcnJvclBhZ2UgfSBmcm9tICIuL2xpYi9lcnJvci1wYWdlIjsKCnR5cGUgU2VydmVyRW50cnkgPSB7CiAgZmV0Y2g6IChyZXF1ZXN0OiBSZXF1ZXN0LCBlbnY6IHVua25vd24sIGN0eDogdW5rbm93bikgPT4gUHJvbWlzZTxSZXNwb25zZT4gfCBSZXNwb25zZTsKfTsKCmxldCBzZXJ2ZXJFbnRyeVByb21pc2U6IFByb21pc2U8U2VydmVyRW50cnk+IHwgdW5kZWZpbmVkOwoKYXN5bmMgZnVuY3Rpb24gZ2V0U2VydmVyRW50cnkoKTogUHJvbWlzZTxTZXJ2ZXJFbnRyeT4gewogIGlmICghc2VydmVyRW50cnlQcm9taXNlKSB7CiAgICBzZXJ2ZXJFbnRyeVByb21pc2UgPSBpbXBvcnQoIkB0YW5zdGFjay9yZWFjdC1zdGFydC9zZXJ2ZXItZW50cnkiKS50aGVuKAogICAgICAobSkgPT4gKChtIGFzIHsgZGVmYXVsdD86IFNlcnZlckVudHJ5IH0pLmRlZmF1bHQgPz8gKG0gYXMgdW5rbm93biBhcyBTZXJ2ZXJFbnRyeSkpLAogICAgKTsKICB9CiAgcmV0dXJuIHNlcnZlckVudHJ5UHJvbWlzZTsKfQoKZnVuY3Rpb24gYnJhbmRlZEVycm9yUmVzcG9uc2UoKTogUmVzcG9uc2UgewogIHJldHVybiBuZXcgUmVzcG9uc2UocmVuZGVyRXJyb3JQYWdlKCksIHsKICAgIHN0YXR1czogNTAwLAogICAgaGVhZGVyczogeyAiY29udGVudC10eXBlIjogInRleHQvaHRtbDsgY2hhcnNldD11dGYtOCIgfSwKICB9KTsKfQoKZnVuY3Rpb24gaXNDYXRhc3Ryb3BoaWNTc3JFcnJvckJvZHkoYm9keTogc3RyaW5nLCByZXNwb25zZVN0YXR1czogbnVtYmVyKTogYm9vbGVhbiB7CiAgbGV0IHBheWxvYWQ6IHVua25vd247CiAgdHJ5IHsKICAgIHBheWxvYWQgPSBKU09OLnBhcnNlKGJvZHkpOwogIH0gY2F0Y2ggewogICAgcmV0dXJuIGZhbHNlOwogIH0KCiAgaWYgKCFwYXlsb2FkIHx8IEFycmF5LmlzQXJyYXkocGF5bG9hZCkgfHwgdHlwZW9mIHBheWxvYWQgIT09ICJvYmplY3QiKSB7CiAgICByZXR1cm4gZmFsc2U7CiAgfQoKICBjb25zdCBmaWVsZHMgPSBwYXlsb2FkIGFzIFJlY29yZDxzdHJpbmcsIHVua25vd24+OwogIGNvbnN0IGV4cGVjdGVkS2V5cyA9IG5ldyBTZXQoWyJtZXNzYWdlIiwgInN0YXR1cyIsICJ1bmhhbmRsZWQiXSk7CiAgaWYgKCFPYmplY3Qua2V5cyhmaWVsZHMpLmV2ZXJ5KChrZXkpID0+IGV4cGVjdGVkS2V5cy5oYXMoa2V5KSkpIHsKICAgIHJldHVybiBmYWxzZTsKICB9CgogIHJldHVybiAoCiAgICBmaWVsZHMudW5oYW5kbGVkID09PSB0cnVlICYmCiAgICBmaWVsZHMubWVzc2FnZSA9PT0gIkhUVFBFcnJvciIgJiYKICAgIChmaWVsZHMuc3RhdHVzID09PSB1bmRlZmluZWQgfHwgZmllbGRzLnN0YXR1cyA9PT0gcmVzcG9uc2VTdGF0dXMpCiAgKTsKfQoKLy8gaDMgc3dhbGxvd3MgaW4taGFuZGxlciB0aHJvd3MgaW50byBhIG5vcm1hbCA1MDAgUmVzcG9uc2Ugd2l0aCBib2R5Ci8vIHsidW5oYW5kbGVkIjp0cnVlLCJtZXNzYWdlIjoiSFRUUEVycm9yIn0g4oCUIHRyeS9jYXRjaCBhbG9uZSBuZXZlciBmaXJlcyBmb3IgdGhvc2UuCmFzeW5jIGZ1bmN0aW9uIG5vcm1hbGl6ZUNhdGFzdHJvcGhpY1NzclJlc3BvbnNlKHJlc3BvbnNlOiBSZXNwb25zZSk6IFByb21pc2U8UmVzcG9uc2U+IHsKICBpZiAocmVzcG9uc2Uuc3RhdHVzIDwgNTAwKSByZXR1cm4gcmVzcG9uc2U7CiAgY29uc3QgY29udGVudFR5cGUgPSByZXNwb25zZS5oZWFkZXJzLmdldCgiY29udGVudC10eXBlIikgPz8gIiI7CiAgaWYgKCFjb250ZW50VHlwZS5pbmNsdWRlcygiYXBwbGljYXRpb24vanNvbiIpKSByZXR1cm4gcmVzcG9uc2U7CgogIGNvbnN0IGJvZHkgPSBhd2FpdCByZXNwb25zZS5jbG9uZSgpLnRleHQoKTsKICBpZiAoIWlzQ2F0YXN0cm9waGljU3NyRXJyb3JCb2R5KGJvZHksIHJlc3BvbnNlLnN0YXR1cykpIHsKICAgIHJldHVybiByZXNwb25zZTsKICB9CgogIGNvbnNvbGUuZXJyb3IoY29uc3VtZUxhc3RDYXB0dXJlZEVycm9yKCkgPz8gbmV3IEVycm9yKGBoMyBzd2FsbG93ZWQgU1NSIGVycm9yOiAke2JvZHl9YCkpOwogIHJldHVybiBicmFuZGVkRXJyb3JSZXNwb25zZSgpOwp9CgovLyBBbGxvd2VkIG9yaWdpbnMgZm9yIENTUkYgcHJvdGVjdGlvbi4KLy8gUmVxdWVzdHMgd2hvc2UgT3JpZ2luIGhlYWRlciBkb2Vzbid0IG1hdGNoIGFyZSByZWplY3RlZCBiZWZvcmUgU1NSIHJ1bnMuCmNvbnN0IEFMTE9XRURfT1JJR0lOUyA9IG5ldyBTZXQoWwogICJodHRwczovL2JyZWV6eS10cmF2ZWxzLmVkbXVuZC10YW0yMy53b3JrZXJzLmRldiIsCl0pOwoKLy8gUHJldmlldyBkZXBsb3ltZW50cyBvZiB0aGlzIHdvcmtlciBnZXQgdmVyc2lvbmVkIFVSTHMgbGlrZQovLyBodHRwczovLzx2ZXJzaW9uPi1icmVlenktdHJhdmVscy5lZG11bmQtdGFtMjMud29ya2Vycy5kZXYuIE9ubHkgdGhlIG93bmVyCi8vIG9mIHRoaXMgQ2xvdWRmbGFyZSBhY2NvdW50IGNhbiBtaW50IGhvc3RuYW1lcyB1bmRlciBpdCwgc28gdHJ1c3RpbmcgdGhlCi8vIHBhdHRlcm4gaXMgYXMgc2FmZSBhcyB0cnVzdGluZyB0aGUgZXhhY3QgcHJvZHVjdGlvbiBvcmlnaW4uCmZ1bmN0aW9uIGlzQWxsb3dlZE9yaWdpbihvcmlnaW46IHN0cmluZyk6IGJvb2xlYW4gewogIGlmIChBTExPV0VEX09SSUdJTlMuaGFzKG9yaWdpbikpIHJldHVybiB0cnVlOwogIHRyeSB7CiAgICBjb25zdCB1cmwgPSBuZXcgVVJMKG9yaWdpbik7CiAgICByZXR1cm4gKAogICAgICB1cmwucHJvdG9jb2wgPT09ICJodHRwczoiICYmCiAgICAgIHVybC5ob3N0bmFtZS5lbmRzV2l0aCgiLWJyZWV6eS10cmF2ZWxzLmVkbXVuZC10YW0yMy53b3JrZXJzLmRldiIpCiAgICApOwogIH0gY2F0Y2ggewogICAgcmV0dXJuIGZhbHNlOwogIH0KfQoKLy8gU2VjdXJpdHkgaGVhZGVycyBhZGRlZCB0byBldmVyeSByZXNwb25zZS4KLy8gQ1NQIG5vdGVzOgovLyAtICd1bnNhZmUtaW5saW5lJyBhbmQgJ3Vuc2FmZS1ldmFsJyByZW1vdmVkIGZyb20gc2NyaXB0LXNyYy4KLy8gLSBUd28gU0hBLTI1NiBoYXNoZXMgYWRkZWQgdG8gc2NyaXB0LXNyYyB0byBhbGxvdyB0aGUgc3BlY2lmaWMgaW5saW5lCi8vICAgc2NyaXB0cyBUYW5TdGFjayBTdGFydCBpbmplY3RzIGZvciBTU1Igc3RhdGUgZGVoeWRyYXRpb24uIFRoZXNlIGhhc2hlcwovLyAgIHdlcmUgY2FwdHVyZWQgZnJvbSBDU1AgdmlvbGF0aW9uIHJlcG9ydHMgb24gdGhlIGxpdmUgc2l0ZS4gT25seSB0aGVzZQovLyAgIGV4YWN0IHNjcmlwdHMgYXJlIHBlcm1pdHRlZCB0byBydW4gaW5saW5lIOKAlCBhbnkgb3RoZXIgaW5qZWN0ZWQgc2NyaXB0Ci8vICAgd2lsbCBiZSBibG9ja2VkLgovLyAtIElmIFRhblN0YWNrIFN0YXJ0IGlzIHVwZGF0ZWQgYW5kIHRoZSBpbmplY3RlZCBzY3JpcHRzIGNoYW5nZSwgbmV3Ci8vICAgdmlvbGF0aW9uIHJlcG9ydHMgd2lsbCBhcHBlYXIgaW4gdGhlIGNvbnNvbGUgd2l0aCB1cGRhdGVkIGhhc2hlcyB0bwovLyAgIHJlcGxhY2UgdGhlc2Ugd2l0aC4KLy8gLSAndW5zYWZlLWlubGluZScga2VwdCBpbiBzdHlsZS1zcmM6IHJlbW92aW5nIGl0IGJyZWFrcyBDU1MtaW4tSlMgYW5kCi8vICAgY29tcG9uZW50IGxpYnJhcmllcyAoc2hhZGNuL3VpKSBhbmQgc3R5bGVzIGNhbm5vdCBleGVjdXRlIGNvZGUgYW55d2F5LgovLyAtIHdzczovLyouc3VwYWJhc2UuY28gYWRkZWQgdG8gY29ubmVjdC1zcmMgZm9yIFN1cGFiYXNlIFJlYWx0aW1lLgpjb25zdCBTRUNVUklUWV9IRUFERVJTOiBSZWNvcmQ8c3RyaW5nLCBzdHJpbmc+ID0gewogICJYLUZyYW1lLU9wdGlvbnMiOiAiREVOWSIsCiAgIlgtQ29udGVudC1UeXBlLU9wdGlvbnMiOiAibm9zbmlmZiIsCiAgIlJlZmVycmVyLVBvbGljeSI6ICJzdHJpY3Qtb3JpZ2luLXdoZW4tY3Jvc3Mtb3JpZ2luIiwKICAiUGVybWlzc2lvbnMtUG9saWN5IjogImdlb2xvY2F0aW9uPSgpLCBjYW1lcmE9KCksIG1pY3JvcGhvbmU9KCkiLAogICJDb250ZW50LVNlY3VyaXR5LVBvbGljeSI6IFsKICAgICJkZWZhdWx0LXNyYyAnc2VsZiciLAogICAgInNjcmlwdC1zcmMgJ3NlbGYnICd1bnNhZmUtaW5saW5lJyAndW5zYWZlLWV2YWwnIGh0dHBzOi8vbWFwcy5nb29nbGVhcGlzLmNvbSBodHRwczovL21hcHMuZ3N0YXRpYy5jb20gaHR0cHM6Ly9jaGFsbGVuZ2VzLmNsb3VkZmxhcmUuY29tIiwKICAgICJzdHlsZS1zcmMgJ3NlbGYnICd1bnNhZmUtaW5saW5lJyBodHRwczovL2ZvbnRzLmdvb2dsZWFwaXMuY29tIiwKICAgICJmb250LXNyYyAnc2VsZicgaHR0cHM6Ly9mb250cy5nc3RhdGljLmNvbSIsCiAgICAiaW1nLXNyYyAnc2VsZicgZGF0YTogYmxvYjogaHR0cHM6Ly8qLmdvb2dsZWFwaXMuY29tIGh0dHBzOi8vKi5nc3RhdGljLmNvbSBodHRwczovLyouZ29vZ2xlLmNvbSIsCiAgICAiY29ubmVjdC1zcmMgJ3NlbGYnIGh0dHBzOi8vKi5zdXBhYmFzZS5jbyB3c3M6Ly8qLnN1cGFiYXNlLmNvIGh0dHBzOi8vZ2VuZXJhdGl2ZWxhbmd1YWdlLmdvb2dsZWFwaXMuY29tIGh0dHBzOi8vbWFwcy5nb29nbGVhcGlzLmNvbSBodHRwczovL2NoYWxsZW5nZXMuY2xvdWRmbGFyZS5jb20iLAogICAgImZyYW1lLXNyYyBodHRwczovL2NoYWxsZW5nZXMuY2xvdWRmbGFyZS5jb20iLAogIF0uam9pbigiOyAiKSwKfTsKCmZ1bmN0aW9uIGFkZFNlY3VyaXR5SGVhZGVycyhyZXNwb25zZTogUmVzcG9uc2UpOiBSZXNwb25zZSB7CiAgY29uc3QgaGVhZGVycyA9IG5ldyBIZWFkZXJzKHJlc3BvbnNlLmhlYWRlcnMpOwogIGZvciAoY29uc3QgW2tleSwgdmFsdWVdIG9mIE9iamVjdC5lbnRyaWVzKFNFQ1VSSVRZX0hFQURFUlMpKSB7CiAgICBoZWFkZXJzLnNldChrZXksIHZhbHVlKTsKICB9CiAgcmV0dXJuIG5ldyBSZXNwb25zZShyZXNwb25zZS5ib2R5LCB7CiAgICBzdGF0dXM6IHJlc3BvbnNlLnN0YXR1cywKICAgIHN0YXR1c1RleHQ6IHJlc3BvbnNlLnN0YXR1c1RleHQsCiAgICBoZWFkZXJzLAogIH0pOwp9CgovLyBQYXRocyB0aGF0IHNob3VsZCBiZSByYXRlIGxpbWl0ZWQgKEFJICsgYXV0aCBzZXJ2ZXIgZnVuY3Rpb25zKS4KY29uc3QgUkFURV9MSU1JVEVEX1BBVEhTID0gWyIvX3NlcnZlciJdOwoKdHlwZSBFbnYgPSB7CiAgUkFURV9MSU1JVEVSPzogeyBsaW1pdDogKG9wdHM6IHsga2V5OiBzdHJpbmcgfSkgPT4gUHJvbWlzZTx7IHN1Y2Nlc3M6IGJvb2xlYW4gfT4gfTsKfTsKCmV4cG9ydCBkZWZhdWx0IHsKICBhc3luYyBmZXRjaChyZXF1ZXN0OiBSZXF1ZXN0LCBlbnY6IHVua25vd24sIGN0eDogdW5rbm93bikgewogICAgdHJ5IHsKICAgICAgLy8gQ1NSRiBwcm90ZWN0aW9uOiByZWplY3QgY3Jvc3Mtb3JpZ2luIFBPU1QgcmVxdWVzdHMgd2hvc2UgT3JpZ2luCiAgICAgIC8vIGRvZXNuJ3QgbWF0Y2ggb3VyIGFsbG93ZWQgbGlzdC4gR0VUL0hFQUQgYXJlIHNhZmUgbWV0aG9kcyBhbmQgZXhlbXB0LgogICAgICBjb25zdCBtZXRob2QgPSByZXF1ZXN0Lm1ldGhvZC50b1VwcGVyQ2FzZSgpOwogICAgICBpZiAobWV0aG9kICE9PSAiR0VUIiAmJiBtZXRob2QgIT09ICJIRUFEIikgewogICAgICAgIGNvbnN0IG9yaWdpbiA9IHJlcXVlc3QuaGVhZGVycy5nZXQoIm9yaWdpbiIpOwogICAgICAgIGlmIChvcmlnaW4gJiYgIWlzQWxsb3dlZE9yaWdpbihvcmlnaW4pKSB7CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCJGb3JiaWRkZW4iLCB7IHN0YXR1czogNDAzIH0pOwogICAgICAgIH0KICAgICAgfQoKICAgICAgLy8gUmF0ZSBsaW1pdGluZzogYXBwbHkgdG8gc2VydmVyIGZ1bmN0aW9uIHJvdXRlcyAoL19zZXJ2ZXIpIHVzaW5nCiAgICAgIC8vIHRoZSBDbG91ZGZsYXJlIFJhdGUgTGltaXRlciBiaW5kaW5nLiBLZXlzIGJ5IElQIGFkZHJlc3Mgc28gbGltaXRzCiAgICAgIC8vIGFyZSBwZXItdXNlciByYXRoZXIgdGhhbiBnbG9iYWwuCiAgICAgIGNvbnN0IHsgcGF0aG5hbWUgfSA9IG5ldyBVUkwocmVxdWVzdC51cmwpOwogICAgICBjb25zdCByYXRlTGltaXRlciA9IChlbnYgYXMgRW52KS5SQVRFX0xJTUlURVI7CiAgICAgIGlmIChyYXRlTGltaXRlciAmJiBSQVRFX0xJTUlURURfUEFUSFMuc29tZSgocCkgPT4gcGF0aG5hbWUuc3RhcnRzV2l0aChwKSkpIHsKICAgICAgICBjb25zdCBpcCA9IHJlcXVlc3QuaGVhZGVycy5nZXQoImNmLWNvbm5lY3RpbmctaXAiKSA/PyAidW5rbm93biI7CiAgICAgICAgY29uc3QgeyBzdWNjZXNzIH0gPSBhd2FpdCByYXRlTGltaXRlci5saW1pdCh7IGtleTogaXAgfSk7CiAgICAgICAgaWYgKCFzdWNjZXNzKSB7CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCJUb28gbWFueSByZXF1ZXN0cy4gUGxlYXNlIHNsb3cgZG93biBhbmQgdHJ5IGFnYWluIHNob3J0bHkuIiwgewogICAgICAgICAgICBzdGF0dXM6IDQyOSwKICAgICAgICAgICAgaGVhZGVyczogeyAiUmV0cnktQWZ0ZXIiOiAiNjAiIH0sCiAgICAgICAgICB9KTsKICAgICAgICB9CiAgICAgIH0KCiAgICAgIC8vIEV4cG9zZSBDbG91ZGZsYXJlIFdvcmtlciBlbnYgYmluZGluZ3MgKHNlY3JldHMvdmFycykgdG8gc2VydmVyIGZ1bmN0aW9ucy4KICAgICAgLy8gSW4gV29ya2VycywgZW52IGlzIHBhc3NlZCBwZXItcmVxdWVzdCBhbmQgaXMgTk9UIG9uIHByb2Nlc3MuZW52IG9yIGdsb2JhbFRoaXMgYnkgZGVmYXVsdC4KICAgICAgKGdsb2JhbFRoaXMgYXMgdW5rbm93biBhcyB7IF9fZW52PzogdW5rbm93biB9KS5fX2VudiA9IGVudjsKICAgICAgLy8gU3RvcmUgdGhlIGN1cnJlbnQgcmVxdWVzdCBzbyBzZXJ2ZXIgZnVuY3Rpb25zIGNhbiByZWFkIGhlYWRlcnMgKGUuZy4gQXV0aG9yaXphdGlvbikuCiAgICAgIChnbG9iYWxUaGlzIGFzIHVua25vd24gYXMgeyBfX3JlcXVlc3Q/OiBSZXF1ZXN0IH0pLl9fcmVxdWVzdCA9IHJlcXVlc3Q7CgogICAgICAvLyBOT1RFOiBXZSBpbnRlbnRpb25hbGx5IGRvIE5PVCBzcHJlYWQgaW5kaXZpZHVhbCBlbnYgdmFsdWVzIG9udG8gZ2xvYmFsVGhpcwogICAgICAvLyB0byBhdm9pZCBsZWFraW5nIHNlY3JldHMgKGUuZy4gR0VNSU5JX0FQSV9LRVkpIGludG8gdGhlIGdsb2JhbCBzY29wZS4KICAgICAgLy8gU2VydmVyIGZ1bmN0aW9ucyBzaG91bGQgcmVhZCBmcm9tIGdsb2JhbFRoaXMuX19lbnYgdmlhIHJlYWRFbnYoKSBpbnN0ZWFkLgoKICAgICAgY29uc3QgaGFuZGxlciA9IGF3YWl0IGdldFNlcnZlckVudHJ5KCk7CiAgICAgIGNvbnN0IHJlc3BvbnNlID0gYXdhaXQgaGFuZGxlci5mZXRjaChyZXF1ZXN0LCBlbnYsIGN0eCk7CiAgICAgIGNvbnN0IG5vcm1hbGl6ZWQgPSBhd2FpdCBub3JtYWxpemVDYXRhc3Ryb3BoaWNTc3JSZXNwb25zZShyZXNwb25zZSk7CiAgICAgIHJldHVybiBhZGRTZWN1cml0eUhlYWRlcnMobm9ybWFsaXplZCk7CiAgICB9IGNhdGNoIChlcnJvcikgewogICAgICBjb25zb2xlLmVycm9yKGVycm9yKTsKICAgICAgcmV0dXJuIGJyYW5kZWRFcnJvclJlc3BvbnNlKCk7CiAgICB9CiAgfSwKfTs=
+import "./lib/error-capture";
+
+import { consumeLastCapturedError } from "./lib/error-capture";
+import { renderErrorPage } from "./lib/error-page";
+
+type ServerEntry = {
+  fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
+};
+
+let serverEntryPromise: Promise<ServerEntry> | undefined;
+
+async function getServerEntry(): Promise<ServerEntry> {
+  if (!serverEntryPromise) {
+    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
+      (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
+    );
+  }
+  return serverEntryPromise;
+}
+
+function brandedErrorResponse(): Response {
+  return new Response(renderErrorPage(), {
+    status: 500,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
+function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boolean {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    return false;
+  }
+
+  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
+    return false;
+  }
+
+  const fields = payload as Record<string, unknown>;
+  const expectedKeys = new Set(["message", "status", "unhandled"]);
+  if (!Object.keys(fields).every((key) => expectedKeys.has(key))) {
+    return false;
+  }
+
+  return (
+    fields.unhandled === true &&
+    fields.message === "HTTPError" &&
+    (fields.status === undefined || fields.status === responseStatus)
+  );
+}
+
+// h3 swallows in-handler throws into a normal 500 Response with body
+// {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
+async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
+  if (response.status < 500) return response;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) return response;
+
+  const body = await response.clone().text();
+  if (!isCatastrophicSsrErrorBody(body, response.status)) {
+    return response;
+  }
+
+  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  return brandedErrorResponse();
+}
+
+// Allowed origins for CSRF protection.
+// Requests whose Origin header doesn't match are rejected before SSR runs.
+const ALLOWED_ORIGINS = new Set([
+  "https://breezy-travels.edmund-tam23.workers.dev",
+]);
+
+// Preview deployments of this worker get versioned URLs like
+// https://<version>-breezy-travels.edmund-tam23.workers.dev. Only the owner
+// of this Cloudflare account can mint hostnames under it, so trusting the
+// pattern is as safe as trusting the exact production origin.
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  try {
+    const url = new URL(origin);
+    return (
+      url.protocol === "https:" &&
+      url.hostname.endsWith("-breezy-travels.edmund-tam23.workers.dev")
+    );
+  } catch {
+    return false;
+  }
+}
+
+// Security headers added to every response.
+// CSP notes:
+// - 'unsafe-inline' and 'unsafe-eval' removed from script-src.
+// - Two SHA-256 hashes added to script-src to allow the specific inline
+//   scripts TanStack Start injects for SSR state dehydration. These hashes
+//   were captured from CSP violation reports on the live site. Only these
+//   exact scripts are permitted to run inline — any other injected script
+//   will be blocked.
+// - If TanStack Start is updated and the injected scripts change, new
+//   violation reports will appear in the console with updated hashes to
+//   replace these with.
+// - 'unsafe-inline' kept in style-src: removing it breaks CSS-in-JS and
+//   component libraries (shadcn/ui) and styles cannot execute code anyway.
+// - wss://*.supabase.co added to connect-src for Supabase Realtime.
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://challenges.cloudflare.com",
+    "frame-src https://challenges.cloudflare.com",
+  ].join("; "),
+};
+
+function addSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+// Paths that should be rate limited (AI + auth server functions).
+const RATE_LIMITED_PATHS = ["/_server"];
+
+type Env = {
+  RATE_LIMITER?: { limit: (opts: { key: string }) => Promise<{ success: boolean }> };
+};
+
+export default {
+  async fetch(request: Request, env: unknown, ctx: unknown) {
+    try {
+      // CSRF protection: reject cross-origin POST requests whose Origin
+      // doesn't match our allowed list. GET/HEAD are safe methods and exempt.
+      const method = request.method.toUpperCase();
+      if (method !== "GET" && method !== "HEAD") {
+        const origin = request.headers.get("origin");
+        if (origin && !isAllowedOrigin(origin)) {
+          return new Response("Forbidden", { status: 403 });
+        }
+      }
+
+      // Rate limiting: apply to server function routes (/_server) using
+      // the Cloudflare Rate Limiter binding. Keys by IP address so limits
+      // are per-user rather than global.
+      const { pathname } = new URL(request.url);
+      const rateLimiter = (env as Env).RATE_LIMITER;
+      if (rateLimiter && RATE_LIMITED_PATHS.some((p) => pathname.startsWith(p))) {
+        const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+        const { success } = await rateLimiter.limit({ key: ip });
+        if (!success) {
+          return new Response("Too many requests. Please slow down and try again shortly.", {
+            status: 429,
+            headers: { "Retry-After": "60" },
+          });
+        }
+      }
+
+      // Expose Cloudflare Worker env bindings (secrets/vars) to server functions.
+      // In Workers, env is passed per-request and is NOT on process.env or globalThis by default.
+      (globalThis as unknown as { __env?: unknown }).__env = env;
+      // Store the current request so server functions can read headers (e.g. Authorization).
+      (globalThis as unknown as { __request?: Request }).__request = request;
+
+      // NOTE: We intentionally do NOT spread individual env values onto globalThis
+      // to avoid leaking secrets (e.g. GEMINI_API_KEY) into the global scope.
+      // Server functions should read from globalThis.__env via readEnv() instead.
+
+      const handler = await getServerEntry();
+      const response = await handler.fetch(request, env, ctx);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      return addSecurityHeaders(normalized);
+    } catch (error) {
+      console.error(error);
+      return brandedErrorResponse();
+    }
+  },
+};
