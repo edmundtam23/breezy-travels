@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
 import { useTrips } from "@/lib/storage";
 import { getTheme, setTheme, nextTheme, type Theme } from "@/lib/theme";
 import { Sun, Moon, Monitor } from "lucide-react";
@@ -42,18 +43,6 @@ function countryCodeToName(code: string) {
   } catch {
     return code;
   }
-}
-
-function useCurrentUser() {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => listener.subscription.unsubscribe();
-  }, []);
-  return user;
 }
 
 // ── Theme toggle (reused from index) ─────────────────────────────────────────
@@ -159,7 +148,7 @@ const AVATAR_COLORS = [
   ];
 
 function ProfilePage() {
-  const user = useCurrentUser();
+  const { status, user } = useAuth();
   const trips = useTrips();
   const navigate = useNavigate();
 
@@ -180,14 +169,14 @@ function ProfilePage() {
     setAvatarColor(user.user_metadata?.avatar_color ?? AVATAR_COLORS[0].bg);
   }, [user]);
 
-  // Redirect to login if not authenticated
+  // Redirect to login once auth has resolved and the user is not authenticated.
+  // No timeout hack needed — the shared auth context distinguishes "loading"
+  // from "logged out".
   useEffect(() => {
-    if (user === null) {
-      // Give auth a moment to resolve before redirecting
-      const t = setTimeout(() => navigate({ to: "/login" }), 500);
-      return () => clearTimeout(t);
+    if (status === "unauthenticated") {
+      navigate({ to: "/login" });
     }
-  }, [user, navigate]);
+  }, [status, navigate]);
 
   const handleSignOut = async () => {
     await signOut();

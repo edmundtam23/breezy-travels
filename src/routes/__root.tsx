@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { AuthProvider } from "../lib/auth-context";
 import { signOut } from "../lib/auth";
 import { Button } from "@/components/ui/button";
 import { themeScript } from "../lib/theme";
@@ -133,7 +134,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
