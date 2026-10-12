@@ -72,6 +72,23 @@ const ALLOWED_ORIGINS = new Set([
   "https://breezy-travels.edmund-tam23.workers.dev",
 ]);
 
+// Preview deployments of this worker get versioned URLs like
+// https://<version>-breezy-travels.edmund-tam23.workers.dev. Only the owner
+// of this Cloudflare account can mint hostnames under it, so trusting the
+// pattern is as safe as trusting the exact production origin.
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  try {
+    const url = new URL(origin);
+    return (
+      url.protocol === "https:" &&
+      url.hostname.endsWith("-breezy-travels.edmund-tam23.workers.dev")
+    );
+  } catch {
+    return false;
+  }
+}
+
 // Security headers added to every response.
 // CSP notes:
 // - 'unsafe-inline' and 'unsafe-eval' removed from script-src.
@@ -129,7 +146,7 @@ export default {
       const method = request.method.toUpperCase();
       if (method !== "GET" && method !== "HEAD") {
         const origin = request.headers.get("origin");
-        if (origin && !ALLOWED_ORIGINS.has(origin)) {
+        if (origin && !isAllowedOrigin(origin)) {
           return new Response("Forbidden", { status: 403 });
         }
       }

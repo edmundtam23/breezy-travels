@@ -33,6 +33,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { useTrips, saveTrip, deleteTrip, newId } from "@/lib/storage";
 import { generateItinerary } from "@/lib/itinerary.functions";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
+import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "@/lib/auth";
 import { getTheme, setTheme, nextTheme, type Theme } from "@/lib/theme";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -89,16 +91,35 @@ const FOCUS_OPTIONS = [
 
 type FocusValue = (typeof FOCUS_OPTIONS)[number]["value"];
 
-function useCurrentUser() {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => listener.subscription.unsubscribe();
-  }, []);
-  return user;
+// Neutral loading state shown while the persisted session is being checked.
+// Rendering this instead of the logged-out UI prevents the flash of the
+// unauthenticated homepage when navigating while logged in.
+function HomePageSkeleton() {
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="border-b">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5 rounded-full" />
+            <Skeleton className="h-5 w-28" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="mt-2 h-4 w-96 max-w-full" />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-40 w-full" />
+          ))}
+        </div>
+      </main>
+    </div>
+  );
 }
 
 function useIsMobile() {
@@ -373,7 +394,7 @@ function ThemeToggle() {
 
 function HomePage() {
   const trips = useTrips();
-  const user = useCurrentUser();
+  const { status, user } = useAuth();
   const navigate = useNavigate();
   const [newTripOpen, setNewTripOpen] = useState(false);
   const [filterCountry, setFilterCountry] = useState<string | null>(null);
@@ -386,6 +407,10 @@ function HomePage() {
   const visibleTrips = filterCountry
     ? trips.filter((t) => t.countryCode === filterCountry)
     : trips;
+
+  if (status === "loading" || trips === null) {
+    return <HomePageSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
