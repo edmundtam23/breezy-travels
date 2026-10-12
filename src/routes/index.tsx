@@ -1,6 +1,6 @@
 import { DestinationHero } from "@/components/destination-hero";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,40 +56,7 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const FOCUS_OPTIONS = [
-  {
-    value: "food",
-    label: "🍜 Food",
-    prompt:
-      "Prioritize highly-rated local restaurants, food markets, street food, cafes, and unique dining experiences. Avoid generic tourist traps.",
-  },
-  {
-    value: "sights",
-    label: "🏛 Sights",
-    prompt:
-      "Focus on iconic landmarks, museums, historical sites, and must-see attractions. Include context about each location's significance.",
-  },
-  {
-    value: "outdoors",
-    label: "🌿 Outdoors",
-    prompt:
-      "Prioritize parks, hiking trails, beaches, nature reserves, and outdoor activities. Include practical tips like best times to visit.",
-  },
-  {
-    value: "culture",
-    label: "🎨 Culture",
-    prompt:
-      "Focus on art galleries, theatres, local neighbourhoods, street art, live music venues, and authentic cultural experiences.",
-  },
-  {
-    value: "mix",
-    label: "✨ Mix",
-    prompt:
-      "Create a balanced mix of food, sightseeing, culture, and outdoor experiences for a well-rounded itinerary.",
-  },
-] as const;
-
-type FocusValue = (typeof FOCUS_OPTIONS)[number]["value"];
+import { FOCUS_OPTIONS, type FocusValue } from "@/lib/focus-options";
 
 // Neutral loading state shown while the persisted session is being checked.
 // Rendering this instead of the logged-out UI prevents the flash of the
@@ -667,6 +634,16 @@ function NewTripDialogContent({
   const [destination, setDestination] = useState("");
   const [loading, setLoading] = useState(false);
   const [focus, setFocus] = useState<FocusValue>("mix");
+  // Set when the user cancels a generation (or closes the dialog) mid-flight,
+  // so a late-arriving result is discarded instead of saved.
+  const cancelledRef = useRef(false);
+
+  // Closing the dialog mid-generation counts as a cancellation.
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, []);
   const navigate = useNavigate();
   const aiFn = useServerFn(generateItinerary);
 
@@ -702,13 +679,21 @@ function NewTripDialogContent({
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
     setLoading(true);
+    cancelledRef.current = false;
     try {
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
+      if (cancelledRef.current) {
+        // User cancelled (or closed the dialog) mid-generation: discard the
+        // result. Inputs are left intact so they can fix the mistake.
+        return;
+      }
       const trip: Trip = {
         id: newId(),
         title: res.title,
         destination: res.destination,
         countryCode: res.countryCode,
+        promptText: prompt.trim(),
+        focus,
         days: res.days.map((d) => ({
           id: newId(),
           title: d.title,
@@ -738,6 +723,11 @@ function NewTripDialogContent({
       toast.error(e instanceof Error ? e.message : "Failed to generate itinerary");
       setLoading(false);
     }
+  };
+
+  const handleCancelGeneration = () => {
+    cancelledRef.current = true;
+    setLoading(false);
   };
 
   const handleBlank = async () => {
@@ -826,9 +816,13 @@ function NewTripDialogContent({
             />
           </div>
           <DialogFooter>
-            <Button onClick={handleAi} disabled={loading}>
-              {loading ? "Generating…" : "Generate itinerary"}
-            </Button>
+            {loading ? (
+              <Button variant="outline" onClick={handleCancelGeneration}>
+                Cancel
+              </Button>
+            ) : (
+              <Button onClick={handleAi}>Generate itinerary</Button>
+            )}
           </DialogFooter>
         </TabsContent>
         <TabsContent value="blank" className="space-y-4 pt-4">
