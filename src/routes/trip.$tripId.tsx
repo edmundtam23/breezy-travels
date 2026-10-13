@@ -26,12 +26,14 @@ import {
   ChevronDown,
   Clock,
   Copy,
+  Download,
   ExternalLink,
   Footprints,
   GripVertical,
   Lightbulb,
   Pencil,
   Plus,
+  Share2,
   Sparkles,
   Star,
   Trash2,
@@ -73,6 +75,7 @@ import { MapsProvider } from "@/components/maps-provider";
 import { useCommutes, type CommuteResult } from "@/lib/use-commutes";
 import { generateBlurb, generateItinerary } from "@/lib/itinerary.functions";
 import { FOCUS_OPTIONS, type FocusValue } from "@/lib/focus-options";
+import { downloadTripHtml } from "@/lib/export-trip-html";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/trip/$tripId")({
@@ -199,9 +202,155 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
         <span className="hidden text-sm text-muted-foreground md:inline">· {trip.destination}</span>
       </div>
       <div className="flex items-center gap-1">
+        <ShareTripDialog trip={trip} />
         <EditTripDetailsDialog trip={trip} />
       </div>
     </header>
+  );
+}
+
+function ShareTripDialog({ trip }: { trip: Trip }) {
+  const [open, setOpen] = useState(false);
+  // undefined = not checked yet, null = no link, string = active token
+  const [shareToken, setShareToken] = useState<string | null | undefined>(undefined);
+  const [working, setWorking] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const loadShare = async () => {
+    setShareToken(undefined);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setShareToken(null);
+      return;
+    }
+    const { data } = await supabase
+      .from("trip_shares")
+      .select("token")
+      .eq("trip_id", trip.id)
+      .maybeSingle();
+    setShareToken(data?.token ?? null);
+  };
+
+  const handleOpenChange = (o: boolean) => {
+    if (o) {
+      setCopied(false);
+      loadShare();
+    }
+    setOpen(o);
+  };
+
+  const handleCreate = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Sign in to share this trip.");
+      return;
+    }
+    setWorking(true);
+    try {
+      const token = crypto.randomUUID();
+      const { error } = await supabase.from("trip_shares").insert({
+        token,
+        trip_id: trip.id,
+        created_by: user.id,
+      });
+      if (error) throw error;
+      setShareToken(token);
+    } catch {
+      toast.error("Couldn't create the share link.");
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const handleDisable = async () => {
+    if (!shareToken) return;
+    setWorking(true);
+    try {
+      const { error } = await supabase.from("trip_shares").delete().eq("token", shareToken);
+      if (error) throw error;
+      setShareToken(null);
+      toast.success("Share link disabled.");
+    } catch {
+      toast.error("Couldn't disable the share link.");
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!shareToken) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/share/${shareToken}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn't copy the link.");
+    }
+  };
+
+  const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : "";
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" aria-label="Share trip">
+          <Share2 className="h-4 w-4" />
+          <span className="hidden md:inline">Share</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Share this trip</DialogTitle>
+          <DialogDescription>
+            Anyone with the link can view this trip. Signed-in friends can save a copy to
+            their own trips.
+          </DialogDescription>
+        </DialogHeader>
+        {shareToken === undefined ? (
+          <p className="py-4 text-sm text-muted-foreground">Loading…</p>
+        ) : shareToken === null ? (
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground">
+              No share link yet. Create one to let friends view or copy this trip.
+            </p>
+            <Button className="mt-4" onClick={handleCreate} disabled={working}>
+              {working ? "Creating…" : "Create share link"}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4 pt-2">
+            <div className="flex gap-2">
+              <Input readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
+              <Button variant="outline" onClick={handleCopy}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => downloadTripHtml(trip)}>
+                <Download className="mr-1 h-4 w-4" /> Download HTML
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDisable}
+                disabled={working}
+                className="text-destructive hover:text-destructive"
+              >
+                Disable link
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The HTML download works offline and can be forwarded to anyone — no account
+              needed.
+            </p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
