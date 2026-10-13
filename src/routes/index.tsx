@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useTrips, saveTrip, deleteTrip, newId } from "@/lib/storage";
 import { generateItinerary } from "@/lib/itinerary.functions";
+import { enrichTripWithPlaceIds, useGoogleMapsKey } from "@/lib/place-photos";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -646,6 +647,7 @@ function NewTripDialogContent({
   }, []);
   const navigate = useNavigate();
   const aiFn = useServerFn(generateItinerary);
+  const mapsKey = useGoogleMapsKey();
 
   const reset = useCallback(() => {
     setPrompt("");
@@ -716,6 +718,16 @@ function NewTripDialogContent({
         updatedAt: new Date().toISOString(),
       };
       await saveTrip(trip);
+      // Resolve Google place_ids for photo thumbnails (best-effort; the trip
+      // is already saved, so photo failures never break generation).
+      if (mapsKey) {
+        try {
+          const enriched = await enrichTripWithPlaceIds(trip, mapsKey);
+          await saveTrip(enriched);
+        } catch {
+          // ignore — photos are best-effort
+        }
+      }
       onOpenChange(false);
       reset();
       navigate({ to: "/trip/$tripId", params: { tripId: trip.id } });
