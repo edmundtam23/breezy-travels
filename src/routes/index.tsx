@@ -2,7 +2,7 @@ import { DestinationHero } from "@/components/destination-hero";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut } from "lucide-react";
+import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -634,6 +634,7 @@ function NewTripDialogContent({
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [focus, setFocus] = useState<FocusValue>("mix");
   // Set when the user cancels a generation (or closes the dialog) mid-flight,
   // so a late-arriving result is discarded instead of saved.
@@ -645,6 +646,21 @@ function NewTripDialogContent({
       cancelledRef.current = true;
     };
   }, []);
+
+  // Rotate the loading message every 3s while generating so it feels alive.
+  const LOADING_MESSAGES = [
+    "Dreaming up your itinerary…",
+    "Finding the best spots…",
+    "Checking the map…",
+    "Adding those finishing touches…",
+  ];
+  useEffect(() => {
+    if (!loading) return;
+    const id = setInterval(() => {
+      setLoadingMsgIdx((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [loading]);
   const navigate = useNavigate();
   const aiFn = useServerFn(generateItinerary);
   const mapsKey = useGoogleMapsKey();
@@ -655,6 +671,7 @@ function NewTripDialogContent({
     setTitle("");
     setDestination("");
     setLoading(false);
+    setLoadingMsgIdx(0);
     setFocus("mix");
   }, []);
 
@@ -681,6 +698,7 @@ function NewTripDialogContent({
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
     const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
     setLoading(true);
+    setLoadingMsgIdx(0);
     cancelledRef.current = false;
     try {
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
@@ -781,6 +799,22 @@ function NewTripDialogContent({
           <TabsTrigger value="blank">Manual</TabsTrigger>
         </TabsList>
         <TabsContent value="ai" className="space-y-4 pt-4">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="mt-4 text-lg font-medium">Generating your itinerary…</p>
+              <p
+                key={loadingMsgIdx}
+                className="mt-1 animate-in fade-in text-sm text-muted-foreground"
+              >
+                {LOADING_MESSAGES[loadingMsgIdx]}
+              </p>
+              <p className="mt-4 max-w-xs text-xs text-muted-foreground">
+                This usually takes 20–40 seconds. You can cancel anytime.
+              </p>
+            </div>
+          ) : (
+            <>
           <div className="space-y-2">
             <Label htmlFor="prompt">Trip idea</Label>
             <Textarea
@@ -827,6 +861,8 @@ function NewTripDialogContent({
               onFocus={(e) => e.target.select()}
             />
           </div>
+            </>
+          )}
           <DialogFooter>
             {loading ? (
               <Button variant="outline" onClick={handleCancelGeneration}>
