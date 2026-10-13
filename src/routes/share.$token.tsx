@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import { saveTrip, newId } from "@/lib/storage";
 import { downloadTripHtml } from "@/lib/export-trip-html";
+import { StopPhoto } from "@/components/stop-photo";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
@@ -155,6 +156,14 @@ function SharePage() {
                     key={stop.id}
                     className="flex gap-4 rounded-xl border bg-card p-4"
                   >
+                    {user ? (
+                      <StopPhoto
+                        placeId={stop.placeId}
+                        name={stop.name}
+                        category={stop.category}
+                        index={si}
+                      />
+                    ) : null}
                     <div className="flex w-16 flex-none flex-col">
                       <span className="font-mono text-sm font-semibold">
                         {stop.time || `Stop ${si + 1}`}

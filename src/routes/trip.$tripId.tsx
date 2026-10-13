@@ -1,4 +1,8 @@
-import { StopThumbnail } from "@/components/stop-thumbnail";
+import { StopPhoto } from "@/components/stop-photo";
+import {
+  enrichTripWithPlaceIds,
+  useGoogleMapsKey,
+} from "@/lib/place-photos";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useRef } from "react";
 import {
@@ -364,6 +368,9 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
   const [days, setDays] = useState<number | "">(trip.days.length);
   const [loading, setLoading] = useState(false);
   const aiFn = useServerFn(generateItinerary);
+  // Named distinctly from TripBuilder's mapsKey: duplicate variable names in
+  // one module trigger a bundler renaming bug (declaration renamed, usage missed).
+  const regenMapsKey = useGoogleMapsKey();
 
   const handleOpenChange = (o: boolean) => {
     if (o) {
@@ -420,6 +427,16 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
         updatedAt: new Date().toISOString(),
       };
       await saveTrip(updated);
+      // Resolve Google place_ids for photo thumbnails (best-effort; the trip
+      // is already saved, so photo failures never break regeneration).
+      if (regenMapsKey) {
+        try {
+          const enriched = await enrichTripWithPlaceIds(updated, regenMapsKey);
+          await saveTrip(enriched);
+        } catch {
+          // ignore — photos are best-effort
+        }
+      }
       setOpen(false);
       toast.success("Itinerary regenerated.");
     } catch (e) {
@@ -828,21 +845,15 @@ function SortableStop({
             <GripVertical className="h-4 w-4" />
           </button>
 
-          {stop.photoUrl ? (
-            // Photo available (from Google Places): keep the existing image treatment.
-            // The numbered badge is rendered on top of the photo as before.
-            <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-              <img src={stop.photoUrl} alt={stop.name} className="h-full w-full object-cover" />
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold text-background">
-                {index + 1}
-              </span>
-            </div>
-          ) : (
-            // No photo: StopThumbnail renders the category emoji + navy numbered badge.
-            // Uses stop.category from the Gemini response (e.g. "food", "sights").
-            // Falls back to 📍 pin for stops added manually or missing a category.
-            <StopThumbnail category={stop.category} index={index} />
-          )}
+          {/* Live Google Places photo when available; falls back to the
+              category-emoji thumbnail (and while loading). place_id is resolved
+              at generation time; photo names are never stored per ToS. */}
+          <StopPhoto
+            placeId={stop.placeId}
+            name={stop.name}
+            category={stop.category}
+            index={index}
+          />
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
