@@ -96,8 +96,6 @@ function TripBuilder() {
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
   // Single collapsed state controls both map and day header on mobile
   const [collapsed, setCollapsed] = useState(false);
-  // Browser Maps key for live Places photo thumbnails ("" while loading/logged out)
-  const tripMapsKey = useGoogleMapsKey();
 
   if (trips === null) {
     return (
@@ -778,7 +776,6 @@ function Sidebar({
                   onChange={(patch) => updateStop(s.id, patch)}
                   onRemove={() => removeStop(s.id)}
                   commute={commutes[s.id]}
-                  apiKey={tripMapsKey ?? ""}
                 />
               ))}
             </ul>
@@ -807,7 +804,6 @@ function SortableStop({
   onChange,
   onRemove,
   commute,
-  apiKey,
 }: {
   stop: Stop;
   index: number;
@@ -817,7 +813,6 @@ function SortableStop({
   onChange: (patch: Partial<Stop>) => void;
   onRemove: () => void;
   commute?: CommuteResult;
-  apiKey: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: stop.id,
@@ -858,7 +853,6 @@ function SortableStop({
             name={stop.name}
             category={stop.category}
             index={index}
-            apiKey={apiKey}
           />
 
           <div className="min-w-0 flex-1">
