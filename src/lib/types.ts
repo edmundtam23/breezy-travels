@@ -33,4 +33,6 @@ export interface Trip {
   days: Day[];
   createdAt: string;
   updatedAt: string;
+  promptText?: string;    // original "trip idea" input used to generate the trip
+  focus?: string;         // focus pill value at generation time (food/sights/outdoors/culture/mix)
 }

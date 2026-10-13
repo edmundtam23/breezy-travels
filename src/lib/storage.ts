@@ -48,6 +48,8 @@ return (data ?? []).map((row) => ({
   days: row.days,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  promptText: row.prompt_text ?? undefined,
+  focus: row.focus ?? undefined,
 }));
 }
  
@@ -67,6 +69,8 @@ async function saveTripToSupabase(trip: Trip): Promise<void> {
     days: trip.days,
     created_at: trip.createdAt,
     updated_at: new Date().toISOString(),
+    prompt_text: trip.promptText ?? null,
+    focus: trip.focus ?? null,
   });
   if (error) console.error("Error saving trip:", error);
 }

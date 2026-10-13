@@ -30,6 +30,7 @@ import {
   Footprints,
   GripVertical,
   Lightbulb,
+  Pencil,
   Plus,
   Sparkles,
   Star,
@@ -39,6 +40,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
@@ -56,12 +66,13 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { useTrips, useUpdateTrip, newId } from "@/lib/storage";
+import { useTrips, useUpdateTrip, newId, saveTrip } from "@/lib/storage";
 import type { Stop, TravelMode, Trip, Day } from "@/lib/types";
 import { MapPanel, PlaceSearchInput } from "@/components/map-panel";
 import { MapsProvider } from "@/components/maps-provider";
 import { useCommutes, type CommuteResult } from "@/lib/use-commutes";
-import { generateBlurb } from "@/lib/itinerary.functions";
+import { generateBlurb, generateItinerary } from "@/lib/itinerary.functions";
+import { FOCUS_OPTIONS, type FocusValue } from "@/lib/focus-options";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/trip/$tripId")({
@@ -187,7 +198,188 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
         )}
         <span className="hidden text-sm text-muted-foreground md:inline">· {trip.destination}</span>
       </div>
+      <div className="flex items-center gap-1">
+        <EditTripDetailsDialog trip={trip} />
+      </div>
     </header>
+  );
+}
+
+function EditTripDetailsDialog({ trip }: { trip: Trip }) {
+  const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [idea, setIdea] = useState(trip.promptText ?? "");
+  const [focus, setFocus] = useState<FocusValue>(
+    (FOCUS_OPTIONS.some((o) => o.value === trip.focus) ? trip.focus : "mix") as FocusValue
+  );
+  const [days, setDays] = useState<number | "">(trip.days.length);
+  const [loading, setLoading] = useState(false);
+  const aiFn = useServerFn(generateItinerary);
+
+  const handleOpenChange = (o: boolean) => {
+    if (o) {
+      // Refresh fields from the trip each time the dialog opens.
+      setIdea(trip.promptText ?? "");
+      setFocus(
+        (FOCUS_OPTIONS.some((opt) => opt.value === trip.focus) ? trip.focus : "mix") as FocusValue
+      );
+      setDays(trip.days.length);
+      setConfirming(false);
+    }
+    setOpen(o);
+  };
+
+  const handleRegenerate = async () => {
+    if (!idea.trim()) {
+      toast.error("Add a trip idea to regenerate.");
+      return;
+    }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token ?? "";
+    if (!token) {
+      toast.error("Please sign in to regenerate the itinerary.");
+      return;
+    }
+    const numDays = Number(days) || 1;
+    const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
+    const enrichedPrompt = `${idea.trim()}\n\nFocus preference: ${focusSnippet}`;
+    setLoading(true);
+    try {
+      const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
+      const updated: Trip = {
+        ...trip,
+        days: res.days.map((d) => ({
+          id: newId(),
+          title: d.title,
+          summary: d.summary,
+          stops: d.stops.map((s) => ({
+            id: newId(),
+            name: s.name,
+            address: s.address,
+            lat: s.lat,
+            lng: s.lng,
+            time: s.time,
+            durationMin: s.durationMin,
+            blurb: s.blurb,
+            visitTip: s.visitTip ?? null,
+            category: s.category,
+            travelModeToNext: s.travelModeToNext,
+          })),
+        })),
+        promptText: idea.trim(),
+        focus,
+        updatedAt: new Date().toISOString(),
+      };
+      await saveTrip(updated);
+      setOpen(false);
+      toast.success("Itinerary regenerated.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to regenerate itinerary");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" aria-label="Edit trip details">
+          <Pencil className="h-4 w-4" />
+          <span className="hidden md:inline">Edit details</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl">
+        {!confirming ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Edit trip details</DialogTitle>
+              <DialogDescription>
+                Update the inputs that generated this trip, then regenerate the itinerary.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-idea">Trip idea</Label>
+                <Textarea
+                  id="edit-idea"
+                  rows={3}
+                  placeholder="e.g. 2 days in San Francisco, foodie & murals focus"
+                  value={idea}
+                  onChange={(e) => setIdea(e.target.value)}
+                />
+                {!trip.promptText && (
+                  <p className="text-xs text-muted-foreground">
+                    The original prompt wasn't saved for this trip — enter new details to regenerate.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Trip focus</Label>
+                <div className="flex flex-wrap gap-2">
+                  {FOCUS_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFocus(option.value)}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                        focus === option.value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-days">Days</Label>
+                <Input
+                  id="edit-days"
+                  type="number"
+                  min={1}
+                  max={14}
+                  value={days}
+                  onChange={(e) => {
+                    let value: number | "" = e.target.value === "" ? "" : Number(e.target.value);
+                    if (typeof value === "number" && value > 14) value = 14;
+                    if (typeof value === "number" && value < 1) value = 1;
+                    setDays(value);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setConfirming(true)} disabled={loading}>
+                Regenerate itinerary
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Regenerate itinerary?</DialogTitle>
+              <DialogDescription>
+                This will replace your current day-by-day plan with a freshly generated one. Any
+                manual edits to stops will be lost.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirming(false)} disabled={loading}>
+                Keep current
+              </Button>
+              <Button onClick={handleRegenerate} disabled={loading}>
+                {loading ? "Regenerating…" : "Yes, regenerate"}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
