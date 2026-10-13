@@ -97,7 +97,7 @@ function TripBuilder() {
   // Single collapsed state controls both map and day header on mobile
   const [collapsed, setCollapsed] = useState(false);
   // Browser Maps key for live Places photo thumbnails ("" while loading/logged out)
-  const mapsKey = useGoogleMapsKey();
+  const tripMapsKey = useGoogleMapsKey();
 
   if (trips === null) {
     return (
@@ -370,7 +370,9 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
   const [days, setDays] = useState<number | "">(trip.days.length);
   const [loading, setLoading] = useState(false);
   const aiFn = useServerFn(generateItinerary);
-  const mapsKey = useGoogleMapsKey();
+  // Named distinctly from TripBuilder's mapsKey: duplicate variable names in
+  // one module trigger a bundler renaming bug (declaration renamed, usage missed).
+  const regenMapsKey = useGoogleMapsKey();
 
   const handleOpenChange = (o: boolean) => {
     if (o) {
@@ -429,9 +431,9 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
       await saveTrip(updated);
       // Resolve Google place_ids for photo thumbnails (best-effort; the trip
       // is already saved, so photo failures never break regeneration).
-      if (mapsKey) {
+      if (regenMapsKey) {
         try {
-          const enriched = await enrichTripWithPlaceIds(updated, mapsKey);
+          const enriched = await enrichTripWithPlaceIds(updated, regenMapsKey);
           await saveTrip(enriched);
         } catch {
           // ignore — photos are best-effort
@@ -776,7 +778,7 @@ function Sidebar({
                   onChange={(patch) => updateStop(s.id, patch)}
                   onRemove={() => removeStop(s.id)}
                   commute={commutes[s.id]}
-                  mapsKey={mapsKey ?? ""}
+                  apiKey={tripMapsKey ?? ""}
                 />
               ))}
             </ul>
@@ -805,7 +807,7 @@ function SortableStop({
   onChange,
   onRemove,
   commute,
-  mapsKey,
+  apiKey,
 }: {
   stop: Stop;
   index: number;
@@ -815,7 +817,7 @@ function SortableStop({
   onChange: (patch: Partial<Stop>) => void;
   onRemove: () => void;
   commute?: CommuteResult;
-  mapsKey: string;
+  apiKey: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: stop.id,
@@ -856,7 +858,7 @@ function SortableStop({
             name={stop.name}
             category={stop.category}
             index={index}
-            apiKey={mapsKey}
+            apiKey={apiKey}
           />
 
           <div className="min-w-0 flex-1">
