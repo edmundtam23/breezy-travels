@@ -4,6 +4,7 @@ import { StopThumbnail } from "@/components/stop-thumbnail";
 import {
   fetchPlacePhoto,
   placePhotoUrl,
+  useGoogleMapsKey,
   type PlacePhoto,
 } from "@/lib/place-photos";
 
@@ -11,19 +12,21 @@ import {
 // the category-emoji fallback. Photos are fetched per view (ToS forbids
 // storing them) with a tab-lifetime cache; tap opens a lightbox carrying the
 // mandatory photo attribution.
+//
+// The Maps key is fetched here (not passed as a prop) to keep the data flow
+// local to this component.
 export function StopPhoto({
   placeId,
   name,
   category,
   index,
-  apiKey,
 }: {
   placeId?: string;
   name: string;
   category?: string;
   index: number;
-  apiKey: string;
 }) {
+  const apiKey = useGoogleMapsKey();
   const [photo, setPhoto] = useState<PlacePhoto | null | undefined>(undefined);
   const [open, setOpen] = useState(false);
 
@@ -41,7 +44,7 @@ export function StopPhoto({
     };
   }, [placeId, apiKey]);
 
-  if (!photo) {
+  if (!photo || !apiKey) {
     return <StopThumbnail category={category} index={index} />;
   }
 
