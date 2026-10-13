@@ -159,20 +159,32 @@ export async function enrichTripWithPlaceIds(
  * module state by the MapsProvider pattern). Returns "" when unavailable
  * (e.g. logged out) — callers should treat "" as "no photos".
  */
+// Module-level cache: many StopPhoto instances mount at once (one per stop),
+// so the key is fetched once per tab and shared — not once per component.
+// Without this, 25+ simultaneous server-function calls hit the rate limiter.
+let cachedKey: string | null = null;
+let keyPromise: Promise<string> | null = null;
+
 export function useGoogleMapsKey(): string | null {
   const fn = useServerFn(getMapsApiKey);
-  const [key, setKey] = useState<string | null>(null);
+  const [key, setKey] = useState<string | null>(cachedKey);
   useEffect(() => {
+    if (cachedKey !== null) return; // already resolved (success or failure)
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      const token = data.session?.access_token ?? "";
-      fn({ data: { token } })
-        .then((r) => {
-          if (!cancelled) setKey(r.key || "");
-        })
-        .catch(() => {
-          if (!cancelled) setKey("");
-        });
+    if (!keyPromise) {
+      keyPromise = (async () => {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token ?? "";
+        const r = await fn({ data: { token } });
+        cachedKey = r.key || "";
+        return cachedKey;
+      })().catch(() => {
+        cachedKey = "";
+        return cachedKey;
+      });
+    }
+    keyPromise.then((k) => {
+      if (!cancelled) setKey(k);
     });
     return () => {
       cancelled = true;
