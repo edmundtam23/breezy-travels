@@ -160,7 +160,7 @@ function getClient() {
 }
 
 const GenerateItineraryInput = z.object({
-  prompt: z.string().min(1).max(500).trim(),
+  prompt: z.string().min(1).max(2000).trim(),
   days: z.number().int().min(1).max(14),
   token: z.string().min(1),
 });
