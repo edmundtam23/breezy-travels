@@ -35,4 +35,9 @@ export interface Trip {
   updatedAt: string;
   promptText?: string;    // original "trip idea" input used to generate the trip
   focus?: string;         // focus pill value at generation time (food/sights/outdoors/culture/mix)
+  pace?: string;          // pace pill value at generation time (relaxed/balanced/packed)
+  budget?: string;        // budget pill value at generation time (budget/moderate/splurge)
+  accommodation?: string; // where the traveler is staying (free text, optional)
+  accommodationLat?: number; // geocoded latitude of the accommodation
+  accommodationLng?: number; // geocoded longitude of the accommodation
 }
