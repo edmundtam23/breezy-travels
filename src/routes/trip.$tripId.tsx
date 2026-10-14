@@ -1,6 +1,7 @@
 import { StopPhoto } from "@/components/stop-photo";
 import {
   enrichTripWithPlaceIds,
+  geocodeAccommodation,
   useGoogleMapsKey,
 } from "@/lib/place-photos";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -79,7 +80,7 @@ import { MapPanel, PlaceSearchInput } from "@/components/map-panel";
 import { MapsProvider } from "@/components/maps-provider";
 import { useCommutes, type CommuteResult } from "@/lib/use-commutes";
 import { generateBlurb, generateItinerary } from "@/lib/itinerary.functions";
-import { FOCUS_OPTIONS, type FocusValue } from "@/lib/focus-options";
+import { FOCUS_OPTIONS, PACE_OPTIONS, BUDGET_OPTIONS, type FocusValue, type PaceValue, type BudgetValue } from "@/lib/focus-options";
 import { downloadTripHtml } from "@/lib/export-trip-html";
 import { supabase } from "@/lib/supabase";
 
@@ -138,6 +139,15 @@ function TripBuilder() {
               stops={day?.stops ?? []}
               activeStopId={activeStopId}
               onSelect={setActiveStopId}
+              accommodation={
+                trip.accommodationLat != null && trip.accommodationLng != null
+                  ? {
+                      lat: trip.accommodationLat,
+                      lng: trip.accommodationLng,
+                      name: trip.accommodation ?? "Your stay",
+                    }
+                  : null
+              }
             />
             {trip.days.length > 1 && (
               <div className="absolute left-4 top-4 z-10">
@@ -366,6 +376,13 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
   const [focus, setFocus] = useState<FocusValue>(
     (FOCUS_OPTIONS.some((o) => o.value === trip.focus) ? trip.focus : "mix") as FocusValue
   );
+  const [pace, setPace] = useState<PaceValue>(
+    (PACE_OPTIONS.some((o) => o.value === trip.pace) ? trip.pace : "balanced") as PaceValue
+  );
+  const [budget, setBudget] = useState<BudgetValue>(
+    (BUDGET_OPTIONS.some((o) => o.value === trip.budget) ? trip.budget : "moderate") as BudgetValue
+  );
+  const [accommodation, setAccommodation] = useState(trip.accommodation ?? "");
   const [days, setDays] = useState<number | "">(trip.days.length);
   const [loading, setLoading] = useState(false);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
@@ -396,6 +413,13 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
       setFocus(
         (FOCUS_OPTIONS.some((opt) => opt.value === trip.focus) ? trip.focus : "mix") as FocusValue
       );
+      setPace(
+        (PACE_OPTIONS.some((opt) => opt.value === trip.pace) ? trip.pace : "balanced") as PaceValue
+      );
+      setBudget(
+        (BUDGET_OPTIONS.some((opt) => opt.value === trip.budget) ? trip.budget : "moderate") as BudgetValue
+      );
+      setAccommodation(trip.accommodation ?? "");
       setDays(trip.days.length);
       setConfirming(false);
     }
@@ -414,7 +438,12 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
     }
     const numDays = Number(days) || 1;
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
-    const enrichedPrompt = `${idea.trim()}\n\nFocus preference: ${focusSnippet}`;
+    const paceSnippet = PACE_OPTIONS.find((p) => p.value === pace)?.prompt ?? "";
+    const budgetSnippet = BUDGET_OPTIONS.find((b) => b.value === budget)?.prompt ?? "";
+    const accommodationLine = accommodation.trim()
+      ? `\n\nAccommodation: The traveler is staying at "${accommodation.trim()}".`
+      : "";
+    const enrichedPrompt = `${idea.trim()}\n\nFocus preference: ${focusSnippet}\n\nPace preference: ${paceSnippet}\n\nBudget preference: ${budgetSnippet}${accommodationLine}`;
     setLoading(true);
     setLoadingMsgIdx(0);
     try {
@@ -422,6 +451,14 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
       const updated: Trip = {
         ...trip,
         title: res.title,
+        promptText: idea.trim(),
+        focus,
+        pace,
+        budget,
+        accommodation: accommodation.trim() || undefined,
+        // Clear old coords; re-geocoded below if accommodation is set.
+        accommodationLat: undefined,
+        accommodationLng: undefined,
         days: res.days.map((d) => ({
           id: newId(),
           title: d.title,
@@ -450,7 +487,27 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
       if (regenMapsKey) {
         try {
           const enriched = await enrichTripWithPlaceIds(updated, regenMapsKey);
-          await saveTrip(enriched);
+          // Geocode the accommodation for the map pin (best-effort).
+          let finalTrip = enriched;
+          if (accommodation.trim() && enriched.days.length > 0) {
+            const firstStop = enriched.days[0].stops[0];
+            if (firstStop) {
+              const coords = await geocodeAccommodation(
+                accommodation.trim(),
+                firstStop.lat,
+                firstStop.lng,
+                regenMapsKey
+              );
+              if (coords) {
+                finalTrip = {
+                  ...enriched,
+                  accommodationLat: coords.lat,
+                  accommodationLng: coords.lng,
+                };
+              }
+            }
+          }
+          await saveTrip(finalTrip);
         } catch {
           // ignore — photos are best-effort
         }
@@ -529,6 +586,53 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Pace</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PACE_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setPace(option.value)}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                        pace === option.value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Budget</Label>
+                <div className="flex flex-wrap gap-2">
+                  {BUDGET_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setBudget(option.value)}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                        budget === option.value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-accommodation">Where are you staying? (optional)</Label>
+                <Input
+                  id="edit-accommodation"
+                  placeholder="e.g. Marriott Marquis San Francisco"
+                  value={accommodation}
+                  onChange={(e) => setAccommodation(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-days">Days</Label>

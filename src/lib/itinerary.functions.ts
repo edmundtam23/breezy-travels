@@ -160,7 +160,7 @@ function getClient() {
 }
 
 const GenerateItineraryInput = z.object({
-  prompt: z.string().min(1).max(500).trim(),
+  prompt: z.string().min(1).max(2000).trim(),
   days: z.number().int().min(1).max(14),
   token: z.string().min(1),
 });
@@ -191,7 +191,7 @@ export const generateItinerary = createServerFn({ method: "POST" })
             role: "user",
             parts: [
               {
-                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise). For each stop, set visitTip to a single sentence covering one of: whether reservations or tickets should be booked in advance, whether long queues are common and when to avoid them, or the best time of day to visit. Set visitTip to null if none of these apply. For each stop, set category to exactly one of: food, sights, outdoors, culture. Use food for restaurants, markets, cafes, and bars. Use sights for landmarks, museums, galleries, and historic sites. Use outdoors for parks, beaches, hikes, and natural areas. Use culture for theaters, festivals, temples, and local experiences. Also return a countryCode field with the ISO 3166-1 alpha-2 code (e.g. "BR", "JP", "PT") for the primary country of the destination.`,
+                text: `Plan a ${data.days}-day trip: ${data.prompt}\n\nReturn a structured itinerary with real, well-known points of interest and accurate latitude/longitude coordinates. Each day should have 4-6 stops. Times in HH:MM (24h). Blurbs should be 1-2 sentences. Choose appropriate travel modes (WALKING for stops within 1km, TRANSIT for urban, DRIVING otherwise). LOGISTICS: Cluster stops geographically within each day to minimize travel time and avoid backtracking across the city. Order stops in a logical geographic sequence rather than jumping between distant areas. Account for typical traffic patterns in the destination (e.g., in spread-out cities like Los Angeles, avoid scheduling cross-city trips during rush hour). If an accommodation location is provided in the prompt, plan each day to start and end near it where practical, and favor nearby options for the first and last stops. For each stop, set visitTip to a single sentence covering one of: whether reservations or tickets should be booked in advance, whether long queues are common and when to avoid them, or the best time of day to visit. Set visitTip to null if none of these apply. For each stop, set category to exactly one of: food, sights, outdoors, culture. Use food for restaurants, markets, cafes, and bars. Use sights for landmarks, museums, galleries, and historic sites. Use outdoors for parks, beaches, hikes, and natural areas. Use culture for theaters, festivals, temples, and local experiences. Also return a countryCode field with the ISO 3166-1 alpha-2 code (e.g. "BR", "JP", "PT") for the primary country of the destination.`,
               },
             ],
           },

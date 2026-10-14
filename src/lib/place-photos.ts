@@ -80,7 +80,44 @@ export async function searchPlaceId(
 }
 
 /**
- * Fetch the first photo for a place_id, live (Photos SKU). Session-cached.
+ * Geocode an accommodation name/address to coordinates via Text Search (Pro SKU).
+ * Returns {lat, lng} or null if not found. Used for the map pin showing where
+ * the traveler is staying. Coordinates are stable and safe to store.
+ */
+export async function geocodeAccommodation(
+  query: string,
+  destinationLat: number,
+  destinationLng: number,
+  apiKey: string
+): Promise<{ lat: number; lng: number } | null> {
+  if (!query.trim() || !apiKey) return null;
+  try {
+    const res = await fetch(`${PLACES_BASE}/places:searchText`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "places.location",
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        locationBias: {
+          circle: { center: { latitude: destinationLat, longitude: destinationLng }, radius: 50000 },
+        },
+        maxResultCount: 1,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const loc = data.places?.[0]?.location;
+    if (typeof loc?.latitude !== "number" || typeof loc?.longitude !== "number") return null;
+    return { lat: loc.latitude, lng: loc.longitude };
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch the first photo for a place_id, live (Photos SKU). Session-cached.
  * Returns null when the place has no photos or the fetch fails (e.g. quota).
  */
 export async function fetchPlacePhoto(
