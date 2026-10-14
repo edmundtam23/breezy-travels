@@ -64,7 +64,7 @@ export function MapPanel({ stops, activeStopId, onSelect, accommodation }: Props
           title={`Staying at ${accommodation.name}`}
         >
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-red-500 text-lg shadow-lg"
+            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#800000] text-lg shadow-lg"
             title={`Staying at ${accommodation.name}`}
           >
             🛏️
