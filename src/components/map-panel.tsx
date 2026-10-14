@@ -42,11 +42,13 @@ export function MapPanel({ stops, activeStopId, onSelect, accommodation }: Props
           key={s.id}
           position={{ lat: s.lat, lng: s.lng }}
           onClick={() => onSelect?.(s.id)}
+          // Active marker renders above overlapping markers.
+          zIndex={activeStopId === s.id ? 1000 : undefined}
         >
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold shadow ${
               activeStopId === s.id
-                ? "border-primary bg-primary text-primary-foreground scale-110"
+                ? "border-primary bg-primary text-primary-foreground scale-110 ring-2 ring-white ring-offset-2 ring-offset-transparent"
                 // Fixed black/white (not theme-aware): the map tiles don't change
                 // in dark mode, so markers shouldn't invert either.
                 : "border-neutral-900 bg-neutral-900 text-white"
