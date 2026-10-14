@@ -12,9 +12,10 @@ interface Props {
   stops: Stop[];
   activeStopId?: string | null;
   onSelect?: (id: string) => void;
+  accommodation?: { lat: number; lng: number; name: string } | null;
 }
 
-export function MapPanel({ stops, activeStopId, onSelect }: Props) {
+export function MapPanel({ stops, activeStopId, onSelect, accommodation }: Props) {
   const center = useMemo(() => {
     if (stops.length === 0) return { lat: 37.7749, lng: -122.4194 };
     const lat = stops.reduce((s, x) => s + x.lat, 0) / stops.length;
@@ -35,7 +36,7 @@ export function MapPanel({ stops, activeStopId, onSelect }: Props) {
       fullscreenControlOptions={{ position: ControlPosition.RIGHT_TOP }}
       className="h-full w-full"
     >
-      <FitBounds stops={stops} />
+      <FitBounds stops={stops} accommodation={accommodation} />
       {stops.map((s, i) => (
         <AdvancedMarker
           key={s.id}
@@ -53,21 +54,45 @@ export function MapPanel({ stops, activeStopId, onSelect }: Props) {
           </div>
         </AdvancedMarker>
       ))}
+      {accommodation && (
+        <AdvancedMarker
+          position={{ lat: accommodation.lat, lng: accommodation.lng }}
+          title={`Staying at ${accommodation.name}`}
+        >
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-red-500 text-lg shadow-lg"
+            title={`Staying at ${accommodation.name}`}
+          >
+            🛏️
+          </div>
+        </AdvancedMarker>
+      )}
     </Map>
   );
 }
 
-function FitBounds({ stops }: { stops: Stop[] }) {
+function FitBounds({
+  stops,
+  accommodation,
+}: {
+  stops: Stop[];
+  accommodation?: { lat: number; lng: number; name: string } | null;
+}) {
   const map = useMap();
   const coreLib = useMapsLibrary("core");
   const last = useRef<string>("");
   useEffect(() => {
     if (!map || !coreLib || stops.length === 0) return;
-    const sig = stops.map((s) => `${s.lat},${s.lng}`).join("|");
+    const sig =
+      stops.map((s) => `${s.lat},${s.lng}`).join("|") +
+      (accommodation ? `|${accommodation.lat},${accommodation.lng}` : "");
     if (sig === last.current) return;
     last.current = sig;
     const bounds = new coreLib.LatLngBounds();
     stops.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
+    if (accommodation) {
+      bounds.extend({ lat: accommodation.lat, lng: accommodation.lng });
+    }
     if (stops.length === 1) {
       map.setCenter({ lat: stops[0].lat, lng: stops[0].lng });
       map.setZoom(14);
