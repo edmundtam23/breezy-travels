@@ -50,6 +50,11 @@ return (data ?? []).map((row) => ({
   updatedAt: row.updated_at,
   promptText: row.prompt_text ?? undefined,
   focus: row.focus ?? undefined,
+  pace: row.pace ?? undefined,
+  budget: row.budget ?? undefined,
+  accommodation: row.accommodation ?? undefined,
+  accommodationLat: row.accommodation_lat ?? undefined,
+  accommodationLng: row.accommodation_lng ?? undefined,
 }));
 }
  
@@ -71,6 +76,11 @@ async function saveTripToSupabase(trip: Trip): Promise<void> {
     updated_at: new Date().toISOString(),
     prompt_text: trip.promptText ?? null,
     focus: trip.focus ?? null,
+    pace: trip.pace ?? null,
+    budget: trip.budget ?? null,
+    accommodation: trip.accommodation ?? null,
+    accommodation_lat: trip.accommodationLat ?? null,
+    accommodation_lng: trip.accommodationLng ?? null,
   });
   if (error) console.error("Error saving trip:", error);
 }
