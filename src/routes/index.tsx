@@ -32,7 +32,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useTrips, saveTrip, deleteTrip, newId } from "@/lib/storage";
 import { generateItinerary } from "@/lib/itinerary.functions";
-import { enrichTripWithPlaceIds, useGoogleMapsKey } from "@/lib/place-photos";
+import { enrichTripWithPlaceIds, geocodeAccommodation, useGoogleMapsKey } from "@/lib/place-photos";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,7 +57,7 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-import { FOCUS_OPTIONS, type FocusValue } from "@/lib/focus-options";
+import { FOCUS_OPTIONS, PACE_OPTIONS, BUDGET_OPTIONS, type FocusValue, type PaceValue, type BudgetValue } from "@/lib/focus-options";
 
 // Neutral loading state shown while the persisted session is being checked.
 // Rendering this instead of the logged-out UI prevents the flash of the
@@ -636,6 +636,9 @@ function NewTripDialogContent({
   const [loading, setLoading] = useState(false);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [focus, setFocus] = useState<FocusValue>("mix");
+  const [pace, setPace] = useState<PaceValue>("balanced");
+  const [budget, setBudget] = useState<BudgetValue>("moderate");
+  const [accommodation, setAccommodation] = useState("");
   // Set when the user cancels a generation (or closes the dialog) mid-flight,
   // so a late-arriving result is discarded instead of saved.
   const cancelledRef = useRef(false);
@@ -673,6 +676,9 @@ function NewTripDialogContent({
     setLoading(false);
     setLoadingMsgIdx(0);
     setFocus("mix");
+    setPace("balanced");
+    setBudget("moderate");
+    setAccommodation("");
   }, []);
 
   const handleAi = async () => {
@@ -696,7 +702,12 @@ function NewTripDialogContent({
     }
     const numDays = Number(days) || 1;
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
-    const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}`;
+    const paceSnippet = PACE_OPTIONS.find((p) => p.value === pace)?.prompt ?? "";
+    const budgetSnippet = BUDGET_OPTIONS.find((b) => b.value === budget)?.prompt ?? "";
+    const accommodationLine = accommodation.trim()
+      ? `\n\nAccommodation: The traveler is staying at "${accommodation.trim()}".`
+      : "";
+    const enrichedPrompt = `${prompt.trim()}\n\nFocus preference: ${focusSnippet}\n\nPace preference: ${paceSnippet}\n\nBudget preference: ${budgetSnippet}${accommodationLine}`;
     setLoading(true);
     setLoadingMsgIdx(0);
     cancelledRef.current = false;
@@ -714,6 +725,9 @@ function NewTripDialogContent({
         countryCode: res.countryCode,
         promptText: prompt.trim(),
         focus,
+        pace,
+        budget,
+        accommodation: accommodation.trim() || undefined,
         days: res.days.map((d) => ({
           id: newId(),
           title: d.title,
@@ -742,6 +756,25 @@ function NewTripDialogContent({
         try {
           const enriched = await enrichTripWithPlaceIds(trip, mapsKey);
           await saveTrip(enriched);
+          // Geocode the accommodation for the map pin (best-effort).
+          if (accommodation.trim() && enriched.days.length > 0) {
+            const firstStop = enriched.days[0].stops[0];
+            if (firstStop) {
+              const coords = await geocodeAccommodation(
+                accommodation.trim(),
+                firstStop.lat,
+                firstStop.lng,
+                mapsKey
+              );
+              if (coords) {
+                await saveTrip({
+                  ...enriched,
+                  accommodationLat: coords.lat,
+                  accommodationLng: coords.lng,
+                });
+              }
+            }
+          }
         } catch {
           // ignore — photos are best-effort
         }
@@ -843,6 +876,56 @@ function NewTripDialogContent({
                 </button>
               ))}
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Pace</Label>
+            <div className="flex flex-wrap gap-2 sm:justify-center">
+              {PACE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setPace(option.value)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                    pace === option.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Budget</Label>
+            <div className="flex flex-wrap gap-2 sm:justify-center">
+              {BUDGET_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setBudget(option.value)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors whitespace-nowrap ${
+                    budget === option.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="accommodation">Where are you staying? (optional)</Label>
+            <Input
+              id="accommodation"
+              placeholder="e.g. Marriott Marquis San Francisco"
+              value={accommodation}
+              onChange={(e) => setAccommodation(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              We'll plan around your location and show it on the map.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="days-ai">Days</Label>
