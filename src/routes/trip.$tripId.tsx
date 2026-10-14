@@ -35,6 +35,7 @@ import {
   Footprints,
   GripVertical,
   Lightbulb,
+  Loader2,
   Pencil,
   Plus,
   Share2,
@@ -367,10 +368,26 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
   );
   const [days, setDays] = useState<number | "">(trip.days.length);
   const [loading, setLoading] = useState(false);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const aiFn = useServerFn(generateItinerary);
   // Named distinctly from TripBuilder's mapsKey: duplicate variable names in
   // one module trigger a bundler renaming bug (declaration renamed, usage missed).
   const regenMapsKey = useGoogleMapsKey();
+
+  // Rotate the loading message every 3s while regenerating.
+  const REGEN_LOADING_MESSAGES = [
+    "Dreaming up your new itinerary…",
+    "Finding the best spots…",
+    "Checking the map…",
+    "Adding those finishing touches…",
+  ];
+  useEffect(() => {
+    if (!loading) return;
+    const id = setInterval(() => {
+      setLoadingMsgIdx((i) => (i + 1) % REGEN_LOADING_MESSAGES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [loading]);
 
   const handleOpenChange = (o: boolean) => {
     if (o) {
@@ -389,8 +406,7 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
     if (!idea.trim()) {
       toast.error("Add a trip idea to regenerate.");
       return;
-    }
-    const { data: sessionData } = await supabase.auth.getSession();
+    }    const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token ?? "";
     if (!token) {
       toast.error("Please sign in to regenerate the itinerary.");
@@ -400,10 +416,12 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
     const focusSnippet = FOCUS_OPTIONS.find((f) => f.value === focus)?.prompt ?? "";
     const enrichedPrompt = `${idea.trim()}\n\nFocus preference: ${focusSnippet}`;
     setLoading(true);
+    setLoadingMsgIdx(0);
     try {
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
       const updated: Trip = {
         ...trip,
+        title: res.title,
         days: res.days.map((d) => ({
           id: newId(),
           title: d.title,
@@ -455,7 +473,21 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
-        {!confirming ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="mt-4 text-lg font-medium">Regenerating your itinerary…</p>
+            <p
+              key={loadingMsgIdx}
+              className="mt-1 animate-in fade-in text-sm text-muted-foreground"
+            >
+              {REGEN_LOADING_MESSAGES[loadingMsgIdx]}
+            </p>
+            <p className="mt-4 max-w-xs text-xs text-muted-foreground">
+              This usually takes 20–40 seconds.
+            </p>
+          </div>
+        ) : !confirming ? (
           <>
             <DialogHeader>
               <DialogTitle>Edit trip details</DialogTitle>
