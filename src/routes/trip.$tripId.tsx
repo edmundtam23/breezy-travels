@@ -75,6 +75,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useTrips, useUpdateTrip, newId, saveTrip } from "@/lib/storage";
+import { deferAutoLogout, resumeAutoLogout } from "@/lib/use-session-timeout";
 import type { Stop, TravelMode, Trip, Day } from "@/lib/types";
 import { MapPanel, PlaceSearchInput } from "@/components/map-panel";
 import { MapsProvider } from "@/components/maps-provider";
@@ -446,6 +447,8 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
     const enrichedPrompt = `${idea.trim()}\n\nFocus preference: ${focusSnippet}\n\nPace preference: ${paceSnippet}\n\nBudget preference: ${budgetSnippet}${accommodationLine}`;
     setLoading(true);
     setLoadingMsgIdx(0);
+    // Don't auto-logout mid-regeneration.
+    deferAutoLogout();
     try {
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
       const updated: Trip = {
@@ -518,6 +521,7 @@ function EditTripDetailsDialog({ trip }: { trip: Trip }) {
       toast.error(e instanceof Error ? e.message : "Failed to regenerate itinerary");
     } finally {
       setLoading(false);
+      resumeAutoLogout();
     }
   };
 

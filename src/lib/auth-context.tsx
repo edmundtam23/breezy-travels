@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { useSessionTimeout } from "./use-session-timeout";
+import { SessionTimeoutModal } from "@/components/session-timeout-modal";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -21,6 +23,10 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<SupabaseUser | null>(null);
+
+  // Auto-logout after 30 min of inactivity (warning at 28 min).
+  const { showWarning, secondsLeft, staySignedIn, doLogout } =
+    useSessionTimeout(status === "authenticated");
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ status, user }}>
       {children}
+      <SessionTimeoutModal
+        open={showWarning}
+        secondsLeft={secondsLeft}
+        onStaySignedIn={staySignedIn}
+        onLogOutNow={doLogout}
+      />
     </AuthContext.Provider>
   );
 }
