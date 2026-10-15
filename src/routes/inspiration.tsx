@@ -17,6 +17,7 @@ import {
   type SampleTrip,
 } from "@/lib/sample-trips";
 import { PACE_OPTIONS, BUDGET_OPTIONS } from "@/lib/focus-options";
+import { enrichTripWithPlaceIds, useGoogleMapsKey } from "@/lib/place-photos";
 
 export const Route = createFileRoute("/inspiration")({
   component: InspirationPage,
@@ -33,6 +34,7 @@ function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boole
   const days = sample.days.length;
   const navigate = useNavigate();
   const { user } = useAuth();
+  const mapsKey = useGoogleMapsKey();
   const [generating, setGenerating] = useState(false);
 
   const handleGenerate = async () => {
@@ -47,6 +49,15 @@ function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boole
     try {
       const trip = sampleToTrip(sample);
       await saveTrip(trip);
+      // Resolve place_ids for photo thumbnails (same as normal generation).
+      if (mapsKey) {
+        try {
+          const enriched = await enrichTripWithPlaceIds(trip, mapsKey);
+          await saveTrip(enriched);
+        } catch {
+          // Photo enrichment is best-effort; the trip is already saved.
+        }
+      }
       toast.success("Trip created — customize it from the trip page!");
       navigate({ to: "/trip/$tripId", params: { tripId: trip.id } });
     } catch (e) {
