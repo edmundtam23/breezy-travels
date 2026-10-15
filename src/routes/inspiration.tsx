@@ -1,13 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Compass, MapPin, ArrowRight, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useTrips } from "@/lib/storage";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
+import { useTrips, saveTrip } from "@/lib/storage";
 import {
   SAMPLE_TRIPS,
   getInspirationMode,
   regionLabel,
+  sampleToTrip,
   type SampleTrip,
 } from "@/lib/sample-trips";
 import { PACE_OPTIONS, BUDGET_OPTIONS } from "@/lib/focus-options";
@@ -25,48 +31,70 @@ function budgetLabel(v?: string) {
 
 function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boolean }) {
   const days = sample.days.length;
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    const {
+      data: { user: u },
+    } = await supabase.auth.getUser();
+    if (!u) {
+      navigate({ to: "/login" });
+      return;
+    }
+    setGenerating(true);
+    try {
+      const trip = sampleToTrip(sample);
+      await saveTrip(trip);
+      toast.success("Trip created — customize it from the trip page!");
+      navigate({ to: "/trip/$tripId", params: { tripId: trip.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create trip.");
+      setGenerating(false);
+    }
+  };
+
   return (
-    <Link
-      to="/inspiration/$sampleId"
-      params={{ sampleId: sample.id }}
-      className="block"
+    <Card
+      className={`overflow-hidden transition-shadow hover:shadow-lg cursor-pointer ${
+        featured ? "ring-2 ring-primary" : ""
+      }`}
+      onClick={handleGenerate}
     >
-      <Card
-        className={`overflow-hidden transition-shadow hover:shadow-lg ${
-          featured ? "ring-2 ring-primary" : ""
-        }`}
-      >
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="font-semibold text-lg leading-tight">
-                {sample.title}
-              </h3>
-              <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" />
-                {sample.destination}
-              </p>
-            </div>
-            {featured && (
-              <Badge variant="default" className="shrink-0">
-                <Sparkles className="mr-1 h-3 w-3" />
-                For you
-              </Badge>
-            )}
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h3 className="font-semibold text-lg leading-tight">
+              {sample.title}
+            </h3>
+            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5" />
+              {sample.destination}
+            </p>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">{sample.tagline}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">
-              {days} day{days === 1 ? "" : "s"}
+          {featured && (
+            <Badge variant="default" className="shrink-0">
+              <Sparkles className="mr-1 h-3 w-3" />
+              For you
             </Badge>
-            {sample.pace && <Badge variant="outline">{paceLabel(sample.pace)}</Badge>}
-            {sample.budget && (
-              <Badge variant="outline">{budgetLabel(sample.budget)}</Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+          )}
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">{sample.tagline}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">
+            {days} day{days === 1 ? "" : "s"}
+          </Badge>
+          {sample.pace && <Badge variant="outline">{paceLabel(sample.pace)}</Badge>}
+          {sample.budget && (
+            <Badge variant="outline">{budgetLabel(sample.budget)}</Badge>
+          )}
+        </div>
+        {generating && (
+          <p className="mt-3 text-sm text-muted-foreground">Creating your trip…</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -79,6 +107,7 @@ function InspirationPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      <Toaster />
       <div className="mb-8">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Compass className="h-6 w-6" />
@@ -128,7 +157,7 @@ function InspirationPage() {
       <div className="mt-10 text-center">
         <Button
           variant="outline"
-          onClick={() => navigate({ to: "/" })}
+          onClick={() => navigate({ to: "/", search: { newTrip: true } })}
         >
           Plan your own trip
           <ArrowRight className="ml-2 h-4 w-4" />

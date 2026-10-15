@@ -45,6 +45,9 @@ import { DemoTrip, DemoMapPanel } from "@/components/demo-trip";
 import { DemoCta } from "@/components/demo-cta";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    newTrip: search.newTrip === true || search.newTrip === "true",
+  }),
   head: () => ({
     meta: [
       { title: "Breezy Plans — AI-Powered Trip Planner" },
@@ -365,8 +368,19 @@ function HomePage() {
   const trips = useTrips();
   const { status, user } = useAuth();
   const navigate = useNavigate();
+  const { newTrip } = Route.useSearch();
   const [newTripOpen, setNewTripOpen] = useState(false);
   const [filterCountry, setFilterCountry] = useState<string | null>(null);
+
+  // Auto-open the New Trip dialog when arriving with ?newTrip=true
+  // (e.g. from the Inspiration page's "Plan your own trip" button).
+  useEffect(() => {
+    if (newTrip) {
+      setNewTripOpen(true);
+      // Clear the param so it doesn't reopen on refresh.
+      navigate({ to: "/", search: {}, replace: true });
+    }
+  }, [newTrip]);
 
   const handleSignOut = async () => {
     await signOut();
