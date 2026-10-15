@@ -1,0 +1,139 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Compass, MapPin, ArrowRight, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useTrips } from "@/lib/storage";
+import {
+  SAMPLE_TRIPS,
+  getInspirationMode,
+  regionLabel,
+  type SampleTrip,
+} from "@/lib/sample-trips";
+import { PACE_OPTIONS, BUDGET_OPTIONS } from "@/lib/focus-options";
+
+export const Route = createFileRoute("/inspiration")({
+  component: InspirationPage,
+});
+
+function paceLabel(v?: string) {
+  return PACE_OPTIONS.find((p) => p.value === v)?.label ?? v;
+}
+function budgetLabel(v?: string) {
+  return BUDGET_OPTIONS.find((b) => b.value === v)?.label ?? v;
+}
+
+function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boolean }) {
+  const days = sample.days.length;
+  return (
+    <Link
+      to="/inspiration/$sampleId"
+      params={{ sampleId: sample.id }}
+      className="block"
+    >
+      <Card
+        className={`overflow-hidden transition-shadow hover:shadow-lg ${
+          featured ? "ring-2 ring-primary" : ""
+        }`}
+      >
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h3 className="font-semibold text-lg leading-tight">
+                {sample.title}
+              </h3>
+              <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5" />
+                {sample.destination}
+              </p>
+            </div>
+            {featured && (
+              <Badge variant="default" className="shrink-0">
+                <Sparkles className="mr-1 h-3 w-3" />
+                For you
+              </Badge>
+            )}
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">{sample.tagline}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">
+              {days} day{days === 1 ? "" : "s"}
+            </Badge>
+            {sample.pace && <Badge variant="outline">{paceLabel(sample.pace)}</Badge>}
+            {sample.budget && (
+              <Badge variant="outline">{budgetLabel(sample.budget)}</Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function InspirationPage() {
+  const trips = useTrips();
+  const navigate = useNavigate();
+
+  // useTrips() returns null while loading — treat as "still deciding".
+  const mode = trips ? getInspirationMode(trips) : { mode: "all" as const };
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mb-8">
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <Compass className="h-6 w-6" />
+          Inspiration
+        </h1>
+        <p className="mt-1 text-muted-foreground">
+          Hand-picked itineraries to spark your next trip. Open one to explore,
+          or use it as a starting point for your own.
+        </p>
+      </div>
+
+      {mode.mode === "try-different" && (
+        <div className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold">
+            Try something different
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Your trips have all been in {regionLabel(mode.userRegion)} — here&apos;s
+            an idea from somewhere new.
+          </p>
+          <SampleCard sample={mode.suggestion} featured />
+        </div>
+      )}
+
+      {mode.mode === "popular" && (
+        <div className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold">Popular right now</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {SAMPLE_TRIPS.slice(0, 2).map((s) => (
+              <SampleCard key={s.id} sample={s} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h2 className="mb-3 text-lg font-semibold">
+          {mode.mode === "all" ? "Sample itineraries" : "Browse all"}
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {SAMPLE_TRIPS.map((s) => (
+            <SampleCard key={s.id} sample={s} />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-10 text-center">
+        <Button
+          variant="outline"
+          onClick={() => navigate({ to: "/" })}
+        >
+          Plan your own trip
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}

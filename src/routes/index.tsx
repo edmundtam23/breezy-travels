@@ -233,7 +233,7 @@ function AvatarMenuContent({
         </button>
 
         <Link
-          to="/"
+          to="/inspiration"
           onClick={onClose}
           className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
         >
