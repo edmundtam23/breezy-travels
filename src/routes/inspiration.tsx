@@ -4,11 +4,20 @@ import { Compass, MapPin, ArrowRight, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import { useTrips, saveTrip } from "@/lib/storage";
+import type { Trip } from "@/lib/types";
 import {
   SAMPLE_TRIPS,
   getInspirationMode,
@@ -30,21 +39,27 @@ function budgetLabel(v?: string) {
   return BUDGET_OPTIONS.find((b) => b.value === v)?.label ?? v;
 }
 
+function samplePromptText(sample: SampleTrip): string {
+  return `Inspired by the sample itinerary: ${sample.title}`;
+}
+
+function findExistingCopy(trips: Trip[] | null, sample: SampleTrip): Trip | undefined {
+  if (!trips) return undefined;
+  const marker = samplePromptText(sample);
+  return trips.find((t) => t.promptText === marker);
+}
+
 function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boolean }) {
   const days = sample.days.length;
   const navigate = useNavigate();
   const { user } = useAuth();
   const mapsKey = useGoogleMapsKey();
+  const trips = useTrips();
   const [generating, setGenerating] = useState(false);
+  const [showDuplicate, setShowDuplicate] = useState(false);
+  const [existingTrip, setExistingTrip] = useState<Trip | null>(null);
 
-  const handleGenerate = async () => {
-    const {
-      data: { user: u },
-    } = await supabase.auth.getUser();
-    if (!u) {
-      navigate({ to: "/login" });
-      return;
-    }
+  const doGenerate = async () => {
     setGenerating(true);
     try {
       const trip = sampleToTrip(sample);
@@ -64,6 +79,24 @@ function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boole
       toast.error(e instanceof Error ? e.message : "Failed to create trip.");
       setGenerating(false);
     }
+  };
+
+  const handleGenerate = async () => {
+    const {
+      data: { user: u },
+    } = await supabase.auth.getUser();
+    if (!u) {
+      navigate({ to: "/login" });
+      return;
+    }
+    // Guardrail: warn if they already created a trip from this sample.
+    const existing = findExistingCopy(trips, sample);
+    if (existing) {
+      setExistingTrip(existing);
+      setShowDuplicate(true);
+      return;
+    }
+    await doGenerate();
   };
 
   return (
@@ -106,6 +139,42 @@ function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boole
         )}
       </CardContent>
     </Card>
+
+      <Dialog open={showDuplicate} onOpenChange={setShowDuplicate}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Already in your trips</DialogTitle>
+            <DialogDescription>
+              You&apos;ve already created a trip from &ldquo;{sample.title}&rdquo;.
+              Want to view it, or create another copy?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            {existingTrip && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDuplicate(false);
+                  navigate({
+                    to: "/trip/$tripId",
+                    params: { tripId: existingTrip.id },
+                  });
+                }}
+              >
+                View existing trip
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                setShowDuplicate(false);
+                doGenerate();
+              }}
+            >
+              Create another copy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
   );
 }
 
