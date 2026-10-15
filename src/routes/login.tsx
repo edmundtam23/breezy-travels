@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { signIn, signInWithGoogle } from "@/lib/auth";
+import { getLogoutReason } from "@/lib/use-session-timeout";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -19,6 +20,13 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [inactiveLogout, setInactiveLogout] = useState(false);
+
+  useEffect(() => {
+    if (getLogoutReason() === "inactivity") {
+      setInactiveLogout(true);
+    }
+  }, []);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -84,6 +92,12 @@ function LoginPage() {
           <MapPin className="h-6 w-6 text-primary" />
           <span className="text-xl font-semibold">Breezy Plans</span>
         </div>
+
+        {inactiveLogout && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            You were signed out for inactivity. Please sign in again.
+          </div>
+        )}
 
         <Card>
           <CardHeader className="text-center">

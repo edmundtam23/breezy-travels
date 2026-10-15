@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useTrips, saveTrip, deleteTrip, newId } from "@/lib/storage";
+import { deferAutoLogout, resumeAutoLogout } from "@/lib/use-session-timeout";
 import { generateItinerary } from "@/lib/itinerary.functions";
 import { enrichTripWithPlaceIds, geocodeAccommodation, useGoogleMapsKey } from "@/lib/place-photos";
 import { supabase } from "@/lib/supabase";
@@ -711,6 +712,8 @@ function NewTripDialogContent({
     setLoading(true);
     setLoadingMsgIdx(0);
     cancelledRef.current = false;
+    // Don't auto-logout mid-generation.
+    deferAutoLogout();
     try {
       const res = await aiFn({ data: { prompt: enrichedPrompt, days: numDays, token } });
       if (cancelledRef.current) {
@@ -785,6 +788,8 @@ function NewTripDialogContent({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to generate itinerary");
       setLoading(false);
+    } finally {
+      resumeAutoLogout();
     }
   };
 
