@@ -100,6 +100,7 @@ function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boole
   };
 
   return (
+    <>
     <Card
       className={`overflow-hidden transition-shadow hover:shadow-lg cursor-pointer ${
         featured ? "ring-2 ring-primary" : ""
@@ -175,6 +176,7 @@ function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boole
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
   );
 }
 
