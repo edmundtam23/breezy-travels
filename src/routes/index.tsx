@@ -2,7 +2,7 @@ import { DestinationHero } from "@/components/destination-hero";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut, Loader2 } from "lucide-react";
+import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -364,6 +364,179 @@ function ThemeToggle() {
 
 // ── HomePage ──────────────────────────────────────────────────────────────────
 
+
+// ── New visitor hero ────────────────────────────────────────────────────────
+
+function HeroSection({ onPlanTrip }: { onPlanTrip: () => void }) {
+  const [prompt, setPrompt] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prompt.trim()) return;
+    // Open the New Trip dialog with the prompt pre-filled via URL param
+    navigate({ to: "/", search: { newTrip: true } });
+    // The dialog will be opened by the parent via the newTrip param
+    // For now, trigger via custom event
+    window.dispatchEvent(new CustomEvent("breezyplans-open-new-trip", { detail: { prompt: prompt.trim() } }));
+  };
+
+  const examples = [
+    "A long weekend in Lisbon",
+    "Five slow days in Kyoto",
+    "Family trip to the Amalfi Coast",
+  ];
+
+  return (
+    <section className="relative overflow-hidden py-16 sm:py-24">
+      <div className="mx-auto max-w-4xl px-6 text-center">
+        <h1 className="font-display text-5xl sm:text-6xl font-semibold tracking-tight text-foreground">
+          Where to <em className="not-italic text-primary">next?</em>
+        </h1>
+        <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
+          Tell Breezy the trip you are dreaming of, and our AI crafts a day-by-day
+          itinerary for you, thoughtfully paced, mapped out, and ready to wander.
+          No spreadsheets, no stress.
+        </p>
+
+        <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-2xl">
+          <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
+            <input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your dream trip..."
+              className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            />
+            <Button type="submit" className="rounded-full px-6">
+              Plan my trip
+            </Button>
+          </div>
+        </form>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <span className="text-sm text-muted-foreground">Try:</span>
+          {examples.map((ex) => (
+            <button
+              key={ex}
+              onClick={() => setPrompt(ex)}
+              className="rounded-full border border-border bg-white px-4 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary"
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Decorative wave */}
+      <svg className="mt-16 w-full text-primary/10" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden>
+        <path fill="currentColor" d="M0,64 C360,120 1080,0 1440,64 L1440,120 L0,120 Z" />
+      </svg>
+    </section>
+  );
+}
+
+// ── How it works ────────────────────────────────────────────────────────────
+
+function HowItWorks() {
+  const steps = [
+    {
+      icon: Pencil,
+      title: "Describe your trip",
+      desc: "Tell us where you want to go and what you love. A few words is enough.",
+    },
+    {
+      icon: Sparkles,
+      title: "AI crafts your days",
+      desc: "Get a day-by-day itinerary with times, maps, and local tips in seconds.",
+    },
+    {
+      icon: MapPin,
+      title: "Explore and refine",
+      desc: "Tweak stops, add your hotel, and make it yours. Every detail editable.",
+    },
+  ];
+
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-16">
+      <h2 className="text-center font-display text-3xl font-semibold">
+        Three gentle steps between you and the good part
+      </h2>
+      <div className="mt-10 grid gap-6 sm:grid-cols-3">
+        {steps.map((s) => (
+          <div
+            key={s.title}
+            className="rounded-2xl border bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <s.icon className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="mt-4 font-semibold text-lg">{s.title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+// ── Quick create bar (returning users) ──────────────────────────────────────
+
+function QuickCreateBar({ onPlanTrip }: { onPlanTrip: () => void }) {
+  return (
+    <section className="border-b bg-white/50">
+      <div className="mx-auto max-w-6xl px-6 py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <h2 className="font-display text-2xl font-semibold whitespace-nowrap">
+            Where to next?
+          </h2>
+          <button
+            onClick={onPlanTrip}
+            className="flex flex-1 items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white px-6 py-3 text-left text-muted-foreground shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16)]"
+          >
+            <span className="flex-1">Describe your dream trip...</span>
+            <span className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground">
+              Plan
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Inspiration preview ─────────────────────────────────────────────────────
+
+function InspirationPreview({ compact }: { compact?: boolean }) {
+  const samples = [
+    { id: "sample-tokyo", title: "Tokyo in 4 Days", destination: "Tokyo, Japan", days: 4, gradient: "from-pink-200 to-orange-200" },
+    { id: "sample-paris", title: "Paris in 3 Days", destination: "Paris, France", days: 3, gradient: "from-purple-200 to-pink-200" },
+    { id: "sample-bali", title: "Bali Slow Week", destination: "Bali, Indonesia", days: 3, gradient: "from-teal-200 to-blue-200" },
+  ];
+
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-16">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-2xl font-semibold">Get inspired</h2>
+        <Link to="/inspiration" className="text-sm text-primary hover:underline">
+          View all
+        </Link>
+      </div>
+      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+        {samples.map((s) => (
+          <Link key={s.id} to="/inspiration" className="group">
+            <div className={`h-40 rounded-2xl bg-gradient-to-br ${s.gradient} transition-transform group-hover:scale-[1.02]`} />
+            <h3 className="mt-3 font-semibold group-hover:text-primary transition-colors">{s.title}</h3>
+            <p className="text-sm text-muted-foreground">{s.destination} · {s.days} days</p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 function HomePage() {
   const trips = useTrips();
   const { status, user } = useAuth();
@@ -398,21 +571,36 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Toaster />
-      <header className="border-b">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Link
-            to="/"
-            onClick={() => setFilterCountry(null)}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <MapPin className="h-5 w-5 text-primary" />
-            <span className="text-lg font-semibold">Breezy Plans</span>
-          </Link>
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-8">
+            <Link
+              to="/"
+              onClick={() => setFilterCountry(null)}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <MapPin className="h-5 w-5 text-primary" />
+              <span className="font-display text-xl font-semibold">Breezy Plans</span>
+            </Link>
+            <nav className="hidden md:flex items-center gap-6">
+              <Link
+                to="/inspiration"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Inspiration
+              </Link>
+              <Link
+                to="/"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                My Trips
+              </Link>
+            </nav>
+          </div>
           <div className="flex items-center gap-2">
             {user ? (
               <>
                 <ThemeToggle />
-                {/* New trip button — desktop only */}
                 <div className="hidden sm:flex">
                   <NewTripDialog open={newTripOpen} onOpenChange={setNewTripOpen} />
                 </div>
@@ -438,60 +626,46 @@ function HomePage() {
         </div>
       </header>
 
-      <main className="relative flex-1 mx-auto max-w-6xl px-6 py-10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Your trips</h1>
-            {filterCountry && (
-              <div className="mt-1 flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  Filtered by {countryCodeToFlag(filterCountry)} {countryCodeToName(filterCountry)}
-                </span>
-                <button
-                  onClick={() => setFilterCountry(null)}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        <p className="mt-2 text-muted-foreground">
-          Plan day-by-day itineraries, reorder stops on a map, and catch tight commute
-          windows before they catch you.
-        </p>
-
-        {!user && (
-          <div className="hidden md:block mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            <Link to="/signup" className="font-medium text-primary hover:underline">
-              Create an account
-            </Link>{" "}
-            or{" "}
-            <Link to="/login" className="font-medium text-primary hover:underline">
-              sign in
-            </Link>{" "}
-            to save your trips across devices.
-          </div>
-        )}
-
+      <main className="flex-1">
         {trips.length === 0 ? (
-          !user ? (
-            <UnauthenticatedHomepage />
-          ) : (
-            <EmptyState onNewTrip={() => setNewTripOpen(true)} />
-          )
+          <>
+            <HeroSection onPlanTrip={() => setNewTripOpen(true)} />
+            <HowItWorks />
+            <InspirationPreview />
+          </>
         ) : (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleTrips.map((t) => (
-              <TripCard key={t.id} trip={t} />
-            ))}
-            {visibleTrips.length === 0 && (
-              <p className="col-span-full text-sm text-muted-foreground">
-                No trips found for {countryCodeToName(filterCountry!)}.
-              </p>
-            )}
-          </div>
+          <>
+            <QuickCreateBar onPlanTrip={() => setNewTripOpen(true)} />
+            <section className="mx-auto max-w-6xl px-6 py-12">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-2xl font-semibold">Continue planning</h2>
+                {filterCountry && (
+                  <button
+                    onClick={() => setFilterCountry(null)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Clear filter
+                  </button>
+                )}
+              </div>
+              {filterCountry && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Filtered by {countryCodeToFlag(filterCountry)} {countryCodeToName(filterCountry)}
+                </p>
+              )}
+              <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {visibleTrips.map((t) => (
+                  <TripCard key={t.id} trip={t} />
+                ))}
+                {visibleTrips.length === 0 && (
+                  <p className="col-span-full text-sm text-muted-foreground">
+                    No trips found for {countryCodeToName(filterCountry!)}.
+                  </p>
+                )}
+              </div>
+            </section>
+            <InspirationPreview compact />
+          </>
         )}
 
         {/* FAB — mobile only, logged-in only */}
