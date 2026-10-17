@@ -234,15 +234,6 @@ function AvatarMenuContent({
           <span className="flex-1 text-left">My Trips</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
-
-        <Link
-          to="/inspiration"
-          onClick={onClose}
-          className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted transition-colors"
-        >
-          <Compass className="h-4 w-4 text-muted-foreground" />
-          Inspiration
-        </Link>
       </div>
 
       {/* Divider + sign out */}
@@ -746,31 +737,27 @@ function HomePage() {
           <>
             <QuickCreateBar onPlanTrip={handlePlanTrip} />
             <section className="mx-auto max-w-6xl px-6 py-12">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display text-2xl font-semibold">Continue planning</h2>
-                {filterCountry && (
-                  <button
-                    onClick={() => setFilterCountry(null)}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Clear filter
-                  </button>
-                )}
+              <h2 className="font-display text-4xl font-semibold tracking-tight">
+                Continue <em className="italic text-primary">planning</em>
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Your trips, right where you left them.
+              </p>
+              <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {[...trips]
+                  .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+                  .slice(0, 3)
+                  .map((t) => (
+                    <HomeTripCard key={t.id} trip={t} />
+                  ))}
               </div>
-              {filterCountry && (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Filtered by {countryCodeToFlag(filterCountry)} {countryCodeToName(filterCountry)}
-                </p>
-              )}
-              <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleTrips.map((t) => (
-                  <TripCard key={t.id} trip={t} />
-                ))}
-                {visibleTrips.length === 0 && (
-                  <p className="col-span-full text-sm text-muted-foreground">
-                    No trips found for {countryCodeToName(filterCountry!)}.
-                  </p>
-                )}
+              <div className="mt-6 text-right">
+                <Link
+                  to="/trips"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  View all trips →
+                </Link>
               </div>
             </section>
             <InspirationPreview compact />
@@ -855,6 +842,58 @@ function EmptyState({ onNewTrip }: { onNewTrip: () => void }) {
 }
 
 // ── Trip card ─────────────────────────────────────────────────────────────────
+
+// ── Trip card (homepage) ────────────────────────────────────────────────────
+// Matches the mockup: gradient thumbnail, serif title, day badge.
+
+const TRIP_GRADIENTS = [
+  "from-[#FFD9C9] via-[#FFE8D6] to-[#FFCFA8]", // peach
+  "from-[#E4D4F5] via-[#EDE4F7] to-[#D9C8F0]", // lavender
+  "from-[#7FD8C9] via-[#9FE3D6] to-[#5CC9B8]", // teal
+  "from-[#FFE3A3] via-[#FFF0C9] to-[#FFD97A]", // amber
+  "from-[#C9E4FF] via-[#DCEEFF] to-[#A8CCF5]", // sky
+  "from-[#FFC9D6] via-[#FFE0E8] to-[#FF9EB5]", // rose
+];
+
+function tripGradient(tripId: string): string {
+  let h = 0;
+  for (let i = 0; i < tripId.length; i++) h = (h * 31 + tripId.charCodeAt(i)) >>> 0;
+  return TRIP_GRADIENTS[h % TRIP_GRADIENTS.length];
+}
+
+function HomeTripCard({ trip }: { trip: Trip }) {
+  const stopCount = trip.days.reduce((n, d) => n + d.stops.length, 0);
+  const days = trip.days.length;
+  return (
+    <Link
+      to="/trip/$tripId"
+      params={{ tripId: trip.id }}
+      className="group overflow-hidden rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
+    >
+      <div className={`relative h-40 bg-gradient-to-br ${tripGradient(trip.id)} overflow-hidden`}>
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/30" />
+        <div className="absolute -left-10 top-14 h-24 w-24 rounded-full bg-white/30" />
+        <div className="absolute right-10 bottom-5 h-10 w-10 rounded-full bg-white/30" />
+      </div>
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-display text-lg font-semibold leading-snug group-hover:text-primary transition-colors">
+            {trip.title}
+          </h3>
+          <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            {days} day{days === 1 ? "" : "s"}
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground truncate">{trip.destination}</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {stopCount} stop{stopCount === 1 ? "" : "s"}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+// ── Original trip card (used on All Trips page) ─────────────────────────────
 
 function TripCard({ trip }: { trip: Trip }) {
   const stopCount = trip.days.reduce((n, d) => n + d.stops.length, 0);
