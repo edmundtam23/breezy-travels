@@ -365,6 +365,28 @@ function ThemeToggle() {
 // ── HomePage ──────────────────────────────────────────────────────────────────
 
 
+// ── Logo ────────────────────────────────────────────────────────────────────
+
+function Logo() {
+  return (
+    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        strokeWidth={2}
+        strokeLinecap="round"
+        className="h-5 w-5"
+        aria-hidden
+      >
+        <path d="M3 8h9a3 3 0 1 0-3-3" />
+        <path d="M3 12h13a3 3 0 1 1-3 3" />
+        <path d="M3 16h6" />
+      </svg>
+    </span>
+  );
+}
+
 // ── New visitor hero ────────────────────────────────────────────────────────
 
 function HeroSection({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
@@ -384,50 +406,52 @@ function HeroSection({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
   ];
 
   return (
-    <section className="relative overflow-hidden py-16 sm:py-24">
-      <div className="mx-auto max-w-4xl px-6 text-center">
-        <h1 className="font-display text-5xl sm:text-6xl font-semibold tracking-tight text-foreground">
-          Where to <em className="not-italic text-primary">next?</em>
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
-          Tell Breezy the trip you are dreaming of, and our AI crafts a day-by-day
-          itinerary for you, thoughtfully paced, mapped out, and ready to wander.
-          No spreadsheets, no stress.
-        </p>
+    <section className="mx-auto max-w-6xl px-6 pt-10">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/[0.07] via-[#FDFBF6] to-primary/[0.04] border border-primary/10 px-6 py-16 sm:py-20">
+        <div className="relative mx-auto max-w-3xl text-center">
+          <h1 className="font-display text-5xl sm:text-6xl font-semibold tracking-tight text-foreground">
+            Where to <em className="italic text-primary">next?</em>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
+            Tell Breezy the trip you are dreaming of, and our AI crafts a day-by-day
+            itinerary for you, thoughtfully paced, mapped out, and ready to wander.
+            No spreadsheets, no stress.
+          </p>
 
-        <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-2xl">
-          <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your dream trip..."
-              className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
-            />
-            <Button type="submit" className="rounded-full px-6">
-              Plan my trip
-            </Button>
+          <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-2xl">
+            <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
+              <input
+                type="text"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe your dream trip..."
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+              />
+              <Button type="submit" className="rounded-full px-6">
+                Plan my trip
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <span className="text-sm text-muted-foreground">Try:</span>
+            {examples.map((ex) => (
+              <button
+                key={ex}
+                onClick={() => setPrompt(ex)}
+                className="rounded-full border border-border bg-white px-4 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary"
+              >
+                {ex}
+              </button>
+            ))}
           </div>
-        </form>
-
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          <span className="text-sm text-muted-foreground">Try:</span>
-          {examples.map((ex) => (
-            <button
-              key={ex}
-              onClick={() => setPrompt(ex)}
-              className="rounded-full border border-border bg-white px-4 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary"
-            >
-              {ex}
-            </button>
-          ))}
         </div>
-      </div>
 
-      {/* Decorative wave */}
-      <svg className="mt-16 w-full text-primary/10" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden>
-        <path fill="currentColor" d="M0,64 C360,120 1080,0 1440,64 L1440,120 L0,120 Z" />
-      </svg>
+        {/* Decorative wave at card bottom */}
+        <svg className="absolute bottom-0 left-0 w-full text-primary/[0.08]" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden>
+          <path fill="currentColor" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" />
+        </svg>
+      </div>
     </section>
   );
 }
@@ -438,37 +462,46 @@ function HowItWorks() {
   const steps = [
     {
       icon: Pencil,
+      step: "Step one",
       title: "Describe your trip",
-      desc: "Tell us where you want to go and what you love. A few words is enough.",
+      desc: "A sentence is enough: where you're headed, when, and the vibe you're after.",
     },
     {
       icon: Sparkles,
+      step: "Step two",
       title: "AI crafts your days",
-      desc: "Get a day-by-day itinerary with times, maps, and local tips in seconds.",
+      desc: "Breezy shapes each day around what's nearby, so you wander more and backtrack less.",
     },
     {
       icon: MapPin,
-      title: "Explore and refine",
-      desc: "Tweak stops, add your hotel, and make it yours. Every detail editable.",
+      step: "Step three",
+      title: "Explore with map & photos",
+      desc: "Every stop pinned on a map with real photos, ready to nudge, swap, or save for later.",
     },
   ];
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
-      <h2 className="text-center font-display text-3xl font-semibold">
-        Three gentle steps between you and the good part
+    <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+      <h2 className="text-center font-display text-4xl font-semibold tracking-tight">
+        Planning, minus the <em className="italic text-primary">planning</em>
+        <br />
+        <em className="italic text-primary">headache</em>
       </h2>
-      <div className="mt-10 grid gap-6 sm:grid-cols-3">
+      <p className="mt-4 text-center text-muted-foreground">
+        Three gentle steps between you and the good part.
+      </p>
+      <div className="mt-12 grid gap-6 sm:grid-cols-3">
         {steps.map((s) => (
           <div
             key={s.title}
-            className="rounded-2xl border bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+            className="rounded-2xl bg-white p-8 text-center shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-shadow hover:shadow-[0_8px_28px_rgba(0,0,0,0.08)]"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
               <s.icon className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="mt-4 font-semibold text-lg">{s.title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+            <p className="mt-5 font-display text-sm italic text-primary">{s.step}</p>
+            <h3 className="mt-2 font-display text-xl font-semibold">{s.title}</h3>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
           </div>
         ))}
       </div>
@@ -518,28 +551,85 @@ function QuickCreateBar({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }
 
 function InspirationPreview({ compact }: { compact?: boolean }) {
   const samples = [
-    { id: "sample-tokyo", title: "Tokyo in 4 Days", destination: "Tokyo, Japan", days: 4, gradient: "from-pink-200 to-orange-200" },
-    { id: "sample-paris", title: "Paris in 3 Days", destination: "Paris, France", days: 3, gradient: "from-purple-200 to-pink-200" },
-    { id: "sample-bali", title: "Bali Slow Week", destination: "Bali, Indonesia", days: 3, gradient: "from-teal-200 to-blue-200" },
+    {
+      id: "tokyo",
+      title: "Tokyo in 4 Days",
+      destination: "Tokyo, Japan",
+      days: "4 days",
+      desc: "Neon nights, quiet shrines, and the best ramen of your life, paced so you can actually enjoy it.",
+      gradient: "from-[#FFD9C9] via-[#FFE8D6] to-[#FFCFA8]",
+      accent: "bg-white/30",
+    },
+    {
+      id: "paris",
+      title: "Paris in 3 Days",
+      destination: "Paris, France",
+      days: "3 days",
+      desc: "Museums in the morning, café terraces by afternoon, and a stroll along the Seine every evening.",
+      gradient: "from-[#E4D4F5] via-[#EDE4F7] to-[#D9C8F0]",
+      accent: "bg-white/30",
+    },
+    {
+      id: "bali",
+      title: "Bali Slow Week",
+      destination: "Bali, Indonesia",
+      days: "7 days",
+      desc: "Jungle mornings, temple afternoons, and sunsets that never once feel rushed.",
+      gradient: "from-[#7FD8C9] via-[#9FE3D6] to-[#5CC9B8]",
+      accent: "bg-white/25",
+    },
   ];
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-2xl font-semibold">Get inspired</h2>
-        <Link to="/inspiration" className="text-sm text-primary hover:underline">
-          View all
-        </Link>
-      </div>
-      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+      <h2 className="font-display text-4xl font-semibold tracking-tight">
+        Get <em className="italic text-primary">inspired</em>
+      </h2>
+      <p className="mt-3 text-muted-foreground">
+        A few journeys we love, ready to make your own.
+      </p>
+      {!compact && (
+        <div className="mt-2 flex justify-end">
+          <Link to="/inspiration" className="text-sm text-primary hover:underline">
+            View all
+          </Link>
+        </div>
+      )}
+      <div className="mt-8 grid gap-6 sm:grid-cols-3">
         {samples.map((s) => (
-          <Link key={s.id} to="/inspiration" className="group">
-            <div className={`h-40 rounded-2xl bg-gradient-to-br ${s.gradient} transition-transform group-hover:scale-[1.02]`} />
-            <h3 className="mt-3 font-semibold group-hover:text-primary transition-colors">{s.title}</h3>
-            <p className="text-sm text-muted-foreground">{s.destination} · {s.days} days</p>
+          <Link
+            key={s.id}
+            to="/inspiration"
+            className="group overflow-hidden rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
+          >
+            <div className={`relative h-44 bg-gradient-to-br ${s.gradient} overflow-hidden`}>
+              {/* Decorative circles */}
+              <div className={`absolute -right-8 -top-8 h-32 w-32 rounded-full ${s.accent}`} />
+              <div className={`absolute -left-10 top-16 h-24 w-24 rounded-full ${s.accent}`} />
+              <div className={`absolute right-12 bottom-6 h-10 w-10 rounded-full ${s.accent}`} />
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-xl font-semibold group-hover:text-primary transition-colors">
+                  {s.title}
+                </h3>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  {s.days}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{s.destination}</p>
+              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+            </div>
           </Link>
         ))}
       </div>
+      {compact && (
+        <div className="mt-6 text-right">
+          <Link to="/inspiration" className="text-sm text-primary hover:underline">
+            View all
+          </Link>
+        </div>
+      )}
     </section>
   );
 }
@@ -593,7 +683,7 @@ function HomePage() {
               onClick={() => setFilterCountry(null)}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <MapPin className="h-5 w-5 text-primary" />
+              <Logo />
               <span className="font-display text-xl font-semibold">Breezy Plans</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
@@ -604,7 +694,7 @@ function HomePage() {
                 Inspiration
               </Link>
               <Link
-                to="/"
+                to={user ? "/" : "/login"}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 My Trips
