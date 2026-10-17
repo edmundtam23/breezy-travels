@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Compass, MapPin, ArrowRight, Sparkles } from "lucide-react";
+import { Compass, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,47 +99,63 @@ function SampleCard({ sample, featured }: { sample: SampleTrip; featured?: boole
     await doGenerate();
   };
 
+  // Gradient per sample (matching homepage)
+  const gradients: Record<string, string> = {
+    tokyo: "from-[#FFD9C9] via-[#FFE8D6] to-[#FFCFA8]",
+    paris: "from-[#E4D4F5] via-[#EDE4F7] to-[#D9C8F0]",
+    bali: "from-[#7FD8C9] via-[#9FE3D6] to-[#5CC9B8]",
+  };
+  const gradient = gradients[sample.id] || "from-primary/20 to-primary/10";
+
   return (
     <>
-    <Card
-      className={`overflow-hidden transition-shadow hover:shadow-lg cursor-pointer ${
+    <div
+      className={`group overflow-hidden rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5 cursor-pointer ${
         featured ? "ring-2 ring-primary" : ""
       }`}
       onClick={handleGenerate}
     >
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="font-semibold text-lg leading-tight">
-              {sample.title}
-            </h3>
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" />
-              {sample.destination}
-            </p>
-          </div>
-          {featured && (
-            <Badge variant="default" className="shrink-0">
-              <Sparkles className="mr-1 h-3 w-3" />
-              For you
-            </Badge>
-          )}
-        </div>
-        <p className="mt-3 text-sm text-muted-foreground">{sample.tagline}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">
+      <div className={`relative h-44 bg-gradient-to-br ${gradient} overflow-hidden`}>
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/30" />
+        <div className="absolute -left-10 top-16 h-24 w-24 rounded-full bg-white/30" />
+        <div className="absolute right-12 bottom-6 h-10 w-10 rounded-full bg-white/30" />
+        {featured && (
+          <span className="absolute top-4 left-4 rounded-full bg-primary px-3 py-1 text-xs font-medium text-white flex items-center gap-1">
+            <Sparkles className="h-3 w-3" />
+            For you
+          </span>
+        )}
+      </div>
+      <div className="p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-xl font-semibold group-hover:text-primary transition-colors">
+            {sample.title}
+          </h3>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             {days} day{days === 1 ? "" : "s"}
-          </Badge>
-          {sample.pace && <Badge variant="outline">{paceLabel(sample.pace)}</Badge>}
-          {sample.budget && (
-            <Badge variant="outline">{budgetLabel(sample.budget)}</Badge>
-          )}
+          </span>
         </div>
+        <p className="mt-1 text-sm text-muted-foreground">{sample.destination}</p>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{sample.tagline}</p>
+        {(sample.pace || sample.budget) && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {sample.pace && (
+              <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                {paceLabel(sample.pace)}
+              </span>
+            )}
+            {sample.budget && (
+              <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                {budgetLabel(sample.budget)}
+              </span>
+            )}
+          </div>
+        )}
         {generating && (
           <p className="mt-3 text-sm text-muted-foreground">Creating your trip…</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
 
       <Dialog open={showDuplicate} onOpenChange={setShowDuplicate}>
         <DialogContent className="sm:max-w-md">
@@ -188,22 +204,34 @@ function InspirationPage() {
   const mode = trips ? getInspirationMode(trips) : { mode: "all" as const };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="min-h-screen bg-background">
       <Toaster />
-      <div className="mb-8">
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Compass className="h-6 w-6" />
-          Inspiration
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-4">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Link>
+          <span className="font-display text-xl font-semibold">Inspiration</span>
+        </div>
+      </header>
+      <div className="mx-auto max-w-6xl px-6 py-12">
+      <div className="mb-10">
+        <h1 className="font-display text-4xl font-semibold tracking-tight">
+          Get <em className="italic text-primary">inspired</em>
         </h1>
-        <p className="mt-1 text-muted-foreground">
+        <p className="mt-3 text-muted-foreground">
           Hand-picked itineraries to spark your next trip. Open one to explore,
           or use it as a starting point for your own.
         </p>
       </div>
 
       {mode.mode === "try-different" && (
-        <div className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">
+        <div className="mb-12">
+          <h2 className="mb-2 font-display text-2xl font-semibold">
             Try something different
           </h2>
           <p className="mb-4 text-sm text-muted-foreground">
@@ -215,9 +243,9 @@ function InspirationPage() {
       )}
 
       {mode.mode === "popular" && (
-        <div className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">Popular right now</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="mb-12">
+          <h2 className="mb-2 font-display text-2xl font-semibold">Popular right now</h2>
+          <div className="grid gap-6 sm:grid-cols-2">
             {SAMPLE_TRIPS.slice(0, 2).map((s) => (
               <SampleCard key={s.id} sample={s} />
             ))}
@@ -226,24 +254,25 @@ function InspirationPage() {
       )}
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold">
+        <h2 className="mb-6 font-display text-2xl font-semibold">
           {mode.mode === "all" ? "Sample itineraries" : "Browse all"}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {SAMPLE_TRIPS.map((s) => (
             <SampleCard key={s.id} sample={s} />
           ))}
         </div>
       </div>
 
-      <div className="mt-10 text-center">
+      <div className="mt-12 text-center">
         <Button
-          variant="outline"
           onClick={() => navigate({ to: "/", search: { newTrip: true } })}
+          className="rounded-full px-8"
         >
           Plan your own trip
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
+      </div>
       </div>
     </div>
   );
