@@ -367,18 +367,14 @@ function ThemeToggle() {
 
 // ── New visitor hero ────────────────────────────────────────────────────────
 
-function HeroSection({ onPlanTrip }: { onPlanTrip: () => void }) {
+function HeroSection({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
   const [prompt, setPrompt] = useState("");
-  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
-    // Open the New Trip dialog with the prompt pre-filled via URL param
-    navigate({ to: "/", search: { newTrip: true } });
-    // The dialog will be opened by the parent via the newTrip param
-    // For now, trigger via custom event
-    window.dispatchEvent(new CustomEvent("breezyplans-open-new-trip", { detail: { prompt: prompt.trim() } }));
+    onPlanTrip(prompt.trim());
+    setPrompt("");
   };
 
   const examples = [
@@ -483,24 +479,36 @@ function HowItWorks() {
 
 // ── Quick create bar (returning users) ──────────────────────────────────────
 
-function QuickCreateBar({ onPlanTrip }: { onPlanTrip: () => void }) {
+function QuickCreateBar({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
+  const [prompt, setPrompt] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prompt.trim()) return;
+    onPlanTrip(prompt.trim());
+    setPrompt("");
+  };
+
   return (
     <section className="border-b bg-white/50">
       <div className="mx-auto max-w-6xl px-6 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row sm:items-center gap-4">
           <h2 className="font-display text-2xl font-semibold whitespace-nowrap">
             Where to next?
           </h2>
-          <button
-            onClick={onPlanTrip}
-            className="flex flex-1 items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white px-6 py-3 text-left text-muted-foreground shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16)]"
-          >
-            <span className="flex-1">Describe your dream trip...</span>
-            <span className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground">
+          <div className="flex flex-1 items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16)]">
+            <input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your dream trip..."
+              className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            />
+            <Button type="submit" className="rounded-full px-6">
               Plan
-            </span>
-          </button>
-        </div>
+            </Button>
+          </div>
+        </form>
       </div>
     </section>
   );
@@ -543,7 +551,13 @@ function HomePage() {
   const navigate = useNavigate();
   const { newTrip } = Route.useSearch();
   const [newTripOpen, setNewTripOpen] = useState(false);
+  const [prefillPrompt, setPrefillPrompt] = useState<string | null>(null);
   const [filterCountry, setFilterCountry] = useState<string | null>(null);
+
+  const handlePlanTrip = (prompt: string) => {
+    setPrefillPrompt(prompt);
+    setNewTripOpen(true);
+  };
 
   // Auto-open the New Trip dialog when arriving with ?newTrip=true
   // (e.g. from the Inspiration page's "Plan your own trip" button).
@@ -602,7 +616,12 @@ function HomePage() {
               <>
                 <ThemeToggle />
                 <div className="hidden sm:flex">
-                  <NewTripDialog open={newTripOpen} onOpenChange={setNewTripOpen} />
+                  <NewTripDialog
+                    open={newTripOpen}
+                    onOpenChange={setNewTripOpen}
+                    prefillPrompt={prefillPrompt}
+                    onPrefillConsumed={() => setPrefillPrompt(null)}
+                  />
                 </div>
                 <AvatarMenu
                   user={user}
@@ -629,13 +648,13 @@ function HomePage() {
       <main className="flex-1">
         {trips.length === 0 ? (
           <>
-            <HeroSection onPlanTrip={() => setNewTripOpen(true)} />
+            <HeroSection onPlanTrip={handlePlanTrip} />
             <HowItWorks />
             <InspirationPreview />
           </>
         ) : (
           <>
-            <QuickCreateBar onPlanTrip={() => setNewTripOpen(true)} />
+            <QuickCreateBar onPlanTrip={handlePlanTrip} />
             <section className="mx-auto max-w-6xl px-6 py-12">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-2xl font-semibold">Continue planning</h2>
@@ -683,6 +702,8 @@ function HomePage() {
               <NewTripDialogContent
                 open={newTripOpen}
                 onOpenChange={setNewTripOpen}
+                prefillPrompt={prefillPrompt}
+                onPrefillConsumed={() => setPrefillPrompt(null)}
               />
             </Dialog>
           </>
@@ -813,9 +834,13 @@ function TripCard({ trip }: { trip: Trip }) {
 function NewTripDialogContent({
   open,
   onOpenChange,
+  prefillPrompt,
+  onPrefillConsumed,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  prefillPrompt?: string | null;
+  onPrefillConsumed?: () => void;
 }) {
   const [tab, setTab] = useState("ai");
   const [prompt, setPrompt] = useState("");
@@ -831,6 +856,14 @@ function NewTripDialogContent({
   // Set when the user cancels a generation (or closes the dialog) mid-flight,
   // so a late-arriving result is discarded instead of saved.
   const cancelledRef = useRef(false);
+
+  // Pre-fill prompt from hero/quick-create (consumed once)
+  useEffect(() => {
+    if (prefillPrompt && open) {
+      setPrompt(prefillPrompt);
+      onPrefillConsumed?.();
+    }
+  }, [prefillPrompt, open]);
 
   // Closing the dialog mid-generation counts as a cancellation.
   useEffect(() => {
@@ -1197,9 +1230,13 @@ function NewTripDialogContent({
 function NewTripDialog({
   open,
   onOpenChange,
+  prefillPrompt,
+  onPrefillConsumed,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  prefillPrompt?: string | null;
+  onPrefillConsumed?: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1208,7 +1245,12 @@ function NewTripDialog({
           <Plus className="mr-1 h-4 w-4" /> New trip
         </Button>
       </DialogTrigger>
-      <NewTripDialogContent open={open} onOpenChange={onOpenChange} />
+      <NewTripDialogContent
+        open={open}
+        onOpenChange={onOpenChange}
+        prefillPrompt={prefillPrompt}
+        onPrefillConsumed={onPrefillConsumed}
+      />
     </Dialog>
   );
 }
