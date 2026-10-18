@@ -514,26 +514,27 @@ function QuickCreateBar({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }
   };
 
   return (
-    <section className="border-b bg-white/50">
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <h2 className="font-display text-2xl font-semibold whitespace-nowrap">
-            Where to next?
-          </h2>
-          <div className="flex flex-1 items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16)]">
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your dream trip..."
-              className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
-            />
-            <Button type="submit" className="rounded-full px-6">
-              Plan
-            </Button>
-          </div>
-        </form>
-      </div>
+    <section className="mx-auto max-w-6xl px-6 pt-12 pb-4">
+      <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight">
+        Welcome back. Where to <em className="italic text-primary">next?</em>
+      </h1>
+      <p className="mt-3 text-lg text-muted-foreground">
+        Pick up where you left off, or start something new.
+      </p>
+      <form onSubmit={handleSubmit} className="mt-8">
+        <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
+          <input
+            type="text"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder='Where to next? Try "4 days in Iceland..."'
+            className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+          />
+          <Button type="submit" className="rounded-full px-6">
+            Plan my trip
+          </Button>
+        </div>
+      </form>
     </section>
   );
 }
@@ -685,7 +686,7 @@ function HomePage() {
                 Inspiration
               </Link>
               <Link
-                to={user ? "/" : "/login"}
+                to="/trips"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 My Trips
