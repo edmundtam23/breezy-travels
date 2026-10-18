@@ -172,15 +172,6 @@ let tripsCacheTime = 0;
 let tripsCacheUserId: string | null | undefined = undefined; // undefined = not yet determined
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
-async function getCurrentUserId(): Promise<string | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id ?? null;
-  } catch {
-    return null;
-  }
-}
-
 function getCachedTrips(): Trip[] | null {
   return tripsCache;
 }
