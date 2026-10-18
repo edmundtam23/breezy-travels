@@ -119,41 +119,67 @@ function deleteLocalTrip(id: string) {
 // Returns null while the initial load is in flight so callers can
 // distinguish "loading" from "no trips" and avoid flashing an empty state.
 export function useTrips(): Trip[] | null {
-  const [trips, setTrips] = useState<Trip[] | null>(null);
- 
+  const [trips, setTrips] = useState<Trip[] | null>(() => getCachedTrips());
+
   useEffect(() => {
-    // Load from Supabase if logged in, otherwise localStorage
-    fetchTripsFromSupabase().then((remoteTrips) => {
-      if (remoteTrips.length > 0) {
-        setTrips(remoteTrips);
-      } else {
-        setTrips(readLocal());
-      }
-    });
- 
+    // Serve cache instantly, then refresh in background if stale.
+    const cached = getCachedTrips();
+    if (cached) {
+      setTrips(cached);
+      if (!isCacheStale()) return;
+    }
+    refreshTrips().then(setTrips);
+
     // Listen for local changes
     const handler = () => {
-      fetchTripsFromSupabase().then((remoteTrips) => {
-        if (remoteTrips.length > 0) setTrips(remoteTrips);
-        else setTrips(readLocal());
-      });
+      refreshTrips().then(setTrips);
     };
     window.addEventListener("itineraries:changed", handler);
     window.addEventListener("storage", handler);
- 
+
     // Listen for auth changes — reload trips when user logs in/out
     const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      invalidateTripsCache();
       handler();
     });
- 
+
     return () => {
       window.removeEventListener("itineraries:changed", handler);
       window.removeEventListener("storage", handler);
       authListener.subscription.unsubscribe();
     };
   }, []);
- 
+
   return trips;
+}
+
+// ── Trips cache ─────────────────────────────────────────────────────────────
+// Module-level cache so navigating between pages doesn't refetch from Supabase
+// every time. Cache is invalidated on mutations and auth changes.
+
+let tripsCache: Trip[] | null = null;
+let tripsCacheTime = 0;
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
+function getCachedTrips(): Trip[] | null {
+  return tripsCache;
+}
+
+function isCacheStale(): boolean {
+  return Date.now() - tripsCacheTime > CACHE_TTL_MS;
+}
+
+async function refreshTrips(): Promise<Trip[]> {
+  const remoteTrips = await fetchTripsFromSupabase();
+  const result = remoteTrips.length > 0 ? remoteTrips : readLocal();
+  tripsCache = result;
+  tripsCacheTime = Date.now();
+  return result;
+}
+
+export function invalidateTripsCache() {
+  tripsCache = null;
+  tripsCacheTime = 0;
 }
  
 export function useTrip(id: string | undefined) {
