@@ -119,41 +119,86 @@ function deleteLocalTrip(id: string) {
 // Returns null while the initial load is in flight so callers can
 // distinguish "loading" from "no trips" and avoid flashing an empty state.
 export function useTrips(): Trip[] | null {
-  const [trips, setTrips] = useState<Trip[] | null>(null);
- 
+  // Initialize with cache synchronously — no loading flash on navigation.
+  // The auth listener invalidates cache on login/logout, so a stale-user
+  // cache is only possible if auth changed without the listener firing,
+  // which we double-check below.
+  const [trips, setTrips] = useState<Trip[] | null>(() => getCachedTrips());
+
   useEffect(() => {
-    // Load from Supabase if logged in, otherwise localStorage
-    fetchTripsFromSupabase().then((remoteTrips) => {
-      if (remoteTrips.length > 0) {
-        setTrips(remoteTrips);
-      } else {
-        setTrips(readLocal());
+    let cancelled = false;
+
+    (async () => {
+      const userId = await getCurrentUserId();
+      const cached = getCachedTrips();
+      // Serve cache if it's for this user and fresh. Otherwise refetch.
+      if (cached && tripsCacheUserId === userId && !isCacheStale()) {
+        if (!cancelled) setTrips(cached);
+        return;
       }
-    });
- 
+      // Cache miss, stale, or wrong user — fetch fresh.
+      // (If we served a wrong-user cache above, this corrects it.)
+      const fresh = await refreshTrips();
+      if (!cancelled) setTrips(fresh);
+    })();
+
     // Listen for local changes
     const handler = () => {
-      fetchTripsFromSupabase().then((remoteTrips) => {
-        if (remoteTrips.length > 0) setTrips(remoteTrips);
-        else setTrips(readLocal());
+      refreshTrips().then((t) => {
+        if (!cancelled) setTrips(t);
       });
     };
     window.addEventListener("itineraries:changed", handler);
     window.addEventListener("storage", handler);
- 
+
     // Listen for auth changes — reload trips when user logs in/out
     const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      invalidateTripsCache();
       handler();
     });
- 
+
     return () => {
+      cancelled = true;
       window.removeEventListener("itineraries:changed", handler);
       window.removeEventListener("storage", handler);
       authListener.subscription.unsubscribe();
     };
   }, []);
- 
+
   return trips;
+}
+
+// ── Trips cache ─────────────────────────────────────────────────────────────
+// Module-level cache so navigating between pages doesn't refetch from Supabase
+// every time. Cache is invalidated on mutations and auth changes.
+
+let tripsCache: Trip[] | null = null;
+let tripsCacheTime = 0;
+let tripsCacheUserId: string | null | undefined = undefined; // undefined = not yet determined
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
+function getCachedTrips(): Trip[] | null {
+  return tripsCache;
+}
+
+function isCacheStale(): boolean {
+  return Date.now() - tripsCacheTime > CACHE_TTL_MS;
+}
+
+async function refreshTrips(): Promise<Trip[]> {
+  const userId = await getCurrentUserId();
+  const remoteTrips = await fetchTripsFromSupabase();
+  const result = remoteTrips.length > 0 ? remoteTrips : readLocal();
+  tripsCache = result;
+  tripsCacheTime = Date.now();
+  tripsCacheUserId = userId;
+  return result;
+}
+
+export function invalidateTripsCache() {
+  tripsCache = null;
+  tripsCacheTime = 0;
+  tripsCacheUserId = undefined;
 }
  
 export function useTrip(id: string | undefined) {
