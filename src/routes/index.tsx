@@ -443,7 +443,7 @@ function HeroSection({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
 
   return (
     <section className="mx-auto max-w-6xl px-6 pt-10">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/[0.07] via-[#FDFBF6] to-primary/[0.04] border border-primary/10 px-5 py-12 sm:px-6 sm:py-16 md:py-20">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/[0.07] via-card to-primary/[0.04] border border-primary/10 px-5 py-12 sm:px-6 sm:py-16 md:py-20 dark:from-primary/[0.15] dark:to-primary/[0.08]">
         <div className="relative mx-auto max-w-3xl text-center">
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-foreground">
             Where to <em className="italic text-primary">next?</em>
@@ -455,13 +455,13 @@ function HeroSection({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
           </p>
 
           <form onSubmit={handleSubmit} className="mx-auto mt-8 sm:mt-10 max-w-2xl">
-            <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-1.5 pl-4 sm:p-2 sm:pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
+            <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] dark:border-primary/40 bg-card p-1.5 pl-4 sm:p-2 sm:pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_6px_24px_4px_rgba(74,155,142,0.2)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
               <input
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe your dream trip..."
-                className="flex-1 min-w-0 bg-transparent text-sm sm:text-base outline-none placeholder:text-muted-foreground"
+                className="flex-1 min-w-0 bg-transparent text-sm sm:text-base outline-none placeholder:text-muted-foreground text-foreground"
               />
               <Button type="submit" className="rounded-full px-4 sm:px-6 shrink-0 text-sm sm:text-base">
                 Plan my trip
@@ -475,7 +475,7 @@ function HeroSection({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
               <button
                 key={ex}
                 onClick={() => setPrompt(ex)}
-                className="shrink-0 rounded-full border border-border bg-white px-4 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary whitespace-nowrap"
+                className="shrink-0 rounded-full border border-border bg-card px-4 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary whitespace-nowrap"
               >
                 {ex}
               </button>
@@ -530,7 +530,7 @@ function HowItWorks() {
         {steps.map((s) => (
           <div
             key={s.title}
-            className="rounded-2xl bg-white p-8 text-center shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-shadow hover:shadow-[0_8px_28px_rgba(0,0,0,0.08)]"
+            className="rounded-2xl bg-card p-8 text-center shadow-[0_2px_16px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.3)] transition-shadow hover:shadow-[0_8px_28px_rgba(0,0,0,0.08)]"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
               <s.icon className="h-6 w-6 text-primary" />
@@ -567,13 +567,13 @@ function QuickCreateBar({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }
         Pick up where you left off, or start something new.
       </p>
       <form onSubmit={handleSubmit} className="mt-6 sm:mt-8">
-        <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-1.5 pl-4 sm:p-2 sm:pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
+        <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] dark:border-primary/40 bg-card p-1.5 pl-4 sm:p-2 sm:pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_6px_24px_4px_rgba(74,155,142,0.2)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
           <input
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder='Where to next? Try "4 days in Iceland..."'
-            className="flex-1 min-w-0 bg-transparent text-sm sm:text-base outline-none placeholder:text-muted-foreground"
+            className="flex-1 min-w-0 bg-transparent text-sm sm:text-base outline-none placeholder:text-muted-foreground text-foreground"
           />
           <Button type="submit" className="rounded-full px-4 sm:px-6 shrink-0 text-sm sm:text-base">
             Plan my trip
@@ -637,7 +637,7 @@ function InspirationPreview({ compact }: { compact?: boolean }) {
           <Link
             key={s.id}
             to="/inspiration"
-            className="group overflow-hidden rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
+            className="group overflow-hidden rounded-2xl bg-card shadow-[0_2px_16px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.3)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
           >
             <div className={`relative h-44 bg-gradient-to-br ${s.gradient} overflow-hidden`}>
               {/* Decorative circles */}
@@ -712,7 +712,7 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Toaster />
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-40">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-8">
             <Link
@@ -918,7 +918,7 @@ function HomeTripCard({ trip }: { trip: Trip }) {
     <Link
       to="/trip/$tripId"
       params={{ tripId: trip.id }}
-      className="group overflow-hidden rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
+      className="group overflow-hidden rounded-2xl bg-card shadow-[0_2px_16px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.3)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
     >
       <div className={`relative h-40 bg-gradient-to-br ${tripGradient(trip.id)} overflow-hidden`}>
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/30" />
