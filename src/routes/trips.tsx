@@ -50,7 +50,7 @@ function AllTripsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Toaster />
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-40">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-4">
           <Link
             to="/"
@@ -160,7 +160,7 @@ function TripCard({ trip }: { trip: Trip }) {
     <Link
       to="/trip/$tripId"
       params={{ tripId: trip.id }}
-      className="group overflow-hidden rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
+      className="group overflow-hidden rounded-2xl bg-card shadow-[0_2px_16px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.3)] transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
     >
       <div className={`relative h-40 bg-gradient-to-br ${tripGradient(trip.id)} overflow-hidden`}>
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/30" />
