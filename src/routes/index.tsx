@@ -2,7 +2,7 @@ import { DestinationHero } from "@/components/destination-hero";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut, Loader2, Pencil } from "lucide-react";
+import { MapPin, Plus, Sparkles, Trash2, Calendar, Sun, Moon, Monitor, ChevronRight, ChevronLeft, User, Briefcase, Compass, LogOut, Loader2, Pencil, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -356,6 +356,51 @@ function ThemeToggle() {
 // ── HomePage ──────────────────────────────────────────────────────────────────
 
 
+// ── Mobile nav ──────────────────────────────────────────────────────────────
+
+function MobileNav({ user }: { user: boolean }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Menu"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+      >
+        {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <div className="absolute right-0 top-11 z-50 w-48 rounded-xl border bg-white py-2 shadow-lg">
+            <Link
+              to="/inspiration"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+            >
+              <Compass className="h-4 w-4 text-muted-foreground" />
+              Inspiration
+            </Link>
+            <Link
+              to={user ? "/trips" : "/login"}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+            >
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+              My Trips
+            </Link>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Logo ────────────────────────────────────────────────────────────────────
 
 function Logo() {
@@ -398,39 +443,39 @@ function HeroSection({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }) {
 
   return (
     <section className="mx-auto max-w-6xl px-6 pt-10">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/[0.07] via-[#FDFBF6] to-primary/[0.04] border border-primary/10 px-6 py-16 sm:py-20">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/[0.07] via-[#FDFBF6] to-primary/[0.04] border border-primary/10 px-5 py-12 sm:px-6 sm:py-16 md:py-20">
         <div className="relative mx-auto max-w-3xl text-center">
-          <h1 className="font-display text-5xl sm:text-6xl font-semibold tracking-tight text-foreground">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-foreground">
             Where to <em className="italic text-primary">next?</em>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
+          <p className="mx-auto mt-5 sm:mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed px-1">
             Tell Breezy the trip you are dreaming of, and our AI crafts a day-by-day
             itinerary for you, thoughtfully paced, mapped out, and ready to wander.
             No spreadsheets, no stress.
           </p>
 
-          <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-2xl">
-            <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
+          <form onSubmit={handleSubmit} className="mx-auto mt-8 sm:mt-10 max-w-2xl">
+            <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-1.5 pl-4 sm:p-2 sm:pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
               <input
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe your dream trip..."
-                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+                className="flex-1 min-w-0 bg-transparent text-sm sm:text-base outline-none placeholder:text-muted-foreground"
               />
-              <Button type="submit" className="rounded-full px-6">
+              <Button type="submit" className="rounded-full px-4 sm:px-6 shrink-0 text-sm sm:text-base">
                 Plan my trip
               </Button>
             </div>
           </form>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-sm text-muted-foreground">Try:</span>
+          <div className="mt-5 sm:mt-6 flex items-center gap-2 overflow-x-auto pb-1 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="text-sm text-muted-foreground shrink-0">Try:</span>
             {examples.map((ex) => (
               <button
                 key={ex}
                 onClick={() => setPrompt(ex)}
-                className="rounded-full border border-border bg-white px-4 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary"
+                className="shrink-0 rounded-full border border-border bg-white px-4 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary whitespace-nowrap"
               >
                 {ex}
               </button>
@@ -514,23 +559,23 @@ function QuickCreateBar({ onPlanTrip }: { onPlanTrip: (prompt: string) => void }
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-12 pb-4">
-      <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight">
+    <section className="mx-auto max-w-6xl px-4 sm:px-6 pt-8 sm:pt-12 pb-4">
+      <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight">
         Welcome back. Where to <em className="italic text-primary">next?</em>
       </h1>
-      <p className="mt-3 text-lg text-muted-foreground">
+      <p className="mt-2 sm:mt-3 text-base sm:text-lg text-muted-foreground">
         Pick up where you left off, or start something new.
       </p>
-      <form onSubmit={handleSubmit} className="mt-8">
-        <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-2 pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
+      <form onSubmit={handleSubmit} className="mt-6 sm:mt-8">
+        <div className="flex items-center gap-2 rounded-full border-[1.5px] border-[#9CCFC4] bg-white p-1.5 pl-4 sm:p-2 sm:pl-6 shadow-[0_6px_24px_4px_rgba(74,155,142,0.12),0_2px_8px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_32px_6px_rgba(74,155,142,0.16),0_2px_8px_rgba(0,0,0,0.06)]">
           <input
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder='Where to next? Try "4 days in Iceland..."'
-            className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            className="flex-1 min-w-0 bg-transparent text-sm sm:text-base outline-none placeholder:text-muted-foreground"
           />
-          <Button type="submit" className="rounded-full px-6">
+          <Button type="submit" className="rounded-full px-4 sm:px-6 shrink-0 text-sm sm:text-base">
             Plan my trip
           </Button>
         </div>
@@ -692,6 +737,10 @@ function HomePage() {
                 My Trips
               </Link>
             </nav>
+            {/* Mobile nav — hamburger */}
+            <div className="md:hidden">
+              <MobileNav user={!!user} />
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {user ? (
@@ -737,7 +786,7 @@ function HomePage() {
         ) : (
           <>
             <QuickCreateBar onPlanTrip={handlePlanTrip} />
-            <section className="mx-auto max-w-6xl px-6 py-12">
+            <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
               <h2 className="font-display text-4xl font-semibold tracking-tight">
                 Continue <em className="italic text-primary">planning</em>
               </h2>
