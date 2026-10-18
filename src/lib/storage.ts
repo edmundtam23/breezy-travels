@@ -119,7 +119,11 @@ function deleteLocalTrip(id: string) {
 // Returns null while the initial load is in flight so callers can
 // distinguish "loading" from "no trips" and avoid flashing an empty state.
 export function useTrips(): Trip[] | null {
-  const [trips, setTrips] = useState<Trip[] | null>(null);
+  // Initialize with cache synchronously — no loading flash on navigation.
+  // The auth listener invalidates cache on login/logout, so a stale-user
+  // cache is only possible if auth changed without the listener firing,
+  // which we double-check below.
+  const [trips, setTrips] = useState<Trip[] | null>(() => getCachedTrips());
 
   useEffect(() => {
     let cancelled = false;
@@ -127,12 +131,13 @@ export function useTrips(): Trip[] | null {
     (async () => {
       const userId = await getCurrentUserId();
       const cached = getCachedTrips();
-      // Only serve cache if it's for the same user and not stale.
-      // This fixes the post-login flash of the new-visitor view.
+      // Serve cache if it's for this user and fresh. Otherwise refetch.
       if (cached && tripsCacheUserId === userId && !isCacheStale()) {
         if (!cancelled) setTrips(cached);
         return;
       }
+      // Cache miss, stale, or wrong user — fetch fresh.
+      // (If we served a wrong-user cache above, this corrects it.)
       const fresh = await refreshTrips();
       if (!cancelled) setTrips(fresh);
     })();
