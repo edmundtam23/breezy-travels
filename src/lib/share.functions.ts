@@ -64,6 +64,8 @@ export const getSharedTrip = createServerFn({ method: "GET" })
     }
 
     const r = row as Record<string, unknown>;
+    // Note: promptText and focus are intentionally excluded from the public
+    // response — prompts often contain personal details (hotel names, dates).
     return {
       id: r.id as string,
       title: r.title as string,
@@ -72,7 +74,5 @@ export const getSharedTrip = createServerFn({ method: "GET" })
       days: (r.days ?? []) as Trip["days"],
       createdAt: r.created_at as string,
       updatedAt: r.updated_at as string,
-      promptText: (r.prompt_text as string) ?? undefined,
-      focus: (r.focus as string) ?? undefined,
     };
   });
