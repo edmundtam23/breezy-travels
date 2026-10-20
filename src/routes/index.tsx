@@ -682,6 +682,11 @@ function HomePage() {
   const [filterCountry, setFilterCountry] = useState<string | null>(null);
 
   const handlePlanTrip = (prompt: string) => {
+    if (!user) {
+      // Not signed in — send to login (they can sign up from there).
+      navigate({ to: "/login" });
+      return;
+    }
     setPrefillPrompt(prompt);
     setNewTripOpen(true);
   };
