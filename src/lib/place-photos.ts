@@ -119,17 +119,27 @@ export async function geocodeAccommodation(
 
 /** Fetch the first photo for a place_id, live (Photos SKU). Session-cached.
  * Returns null when the place has no photos or the fetch fails (e.g. quota).
+ *
+ * placeId is validated before use: it can arrive via shared/copied trips
+ * (user-controlled JSON), and it is interpolated into the request URL sent
+ * with the viewer's API key. Anything that doesn't look like a real Google
+ * place_id is rejected.
  */
+const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]{10,200}$/;
+
+export function isValidPlaceId(placeId: string | undefined | null): boolean {
+  return !!placeId && PLACE_ID_PATTERN.test(placeId);
+}
 export async function fetchPlacePhoto(
   placeId: string,
   apiKey: string
 ): Promise<PlacePhoto | null> {
-  if (!placeId || !apiKey) return null;
+  if (!isValidPlaceId(placeId) || !apiKey) return null;
   const cached = photoCache.get(placeId);
   if (cached !== undefined) return cached;
   const result = await limit(async (): Promise<PlacePhoto | null> => {
     try {
-      const res = await fetch(`${PLACES_BASE}/places/${placeId}`, {
+      const res = await fetch(`${PLACES_BASE}/places/${encodeURIComponent(placeId)}`, {
         headers: {
           "X-Goog-Api-Key": apiKey,
           "X-Goog-FieldMask": "photos",
