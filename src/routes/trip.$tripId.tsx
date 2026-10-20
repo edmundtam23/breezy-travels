@@ -190,9 +190,21 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
   return (
     <header className="flex shrink-0 items-center justify-between border-b px-4 py-3 md:py-4">
       <div className="flex items-center gap-3">
-        <Link to="/" className="rounded p-1 hover:bg-muted" aria-label="Back">
+        <button
+          onClick={() => {
+            // Go back to wherever the user came from (All Trips, home, etc.).
+            // Fall back to home if there's no in-app history (direct link).
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              navigate({ to: "/" });
+            }
+          }}
+          className="rounded p-1 hover:bg-muted"
+          aria-label="Back"
+        >
           <ArrowLeft className="h-4 w-4" />
-        </Link>
+        </button>
         {editing ? (
           <input
             autoFocus
