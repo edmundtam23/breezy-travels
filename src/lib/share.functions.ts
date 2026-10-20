@@ -35,6 +35,37 @@ const GetSharedTripInput = z.object({
   token: z.string().min(1).max(200),
 });
 
+// Validate the days JSONB before it reaches the public share page / HTML
+// export. Trip rows are user-writable (RLS only checks ownership), so the
+// JSON can be poisoned with hostile values — wrong types, oversized strings,
+// script payloads in numeric fields. This schema bounds every field; the
+// export layer additionally coerces numbers (defense in depth).
+const PLACE_ID = /^[A-Za-z0-9_-]{10,200}$/;
+
+const SharedStop = z.object({
+  id: z.string().max(100),
+  name: z.string().max(200),
+  address: z.string().max(300).optional().default(""),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  time: z.string().max(10),
+  durationMin: z.number().min(0).max(1440).default(60),
+  blurb: z.string().max(600).optional().default(""),
+  visitTip: z.string().max(300).nullable().optional(),
+  category: z.string().max(30).optional().default(""),
+  travelModeToNext: z.enum(["WALKING", "DRIVING", "TRANSIT"]).default("DRIVING"),
+  placeId: z.string().regex(PLACE_ID).optional(),
+});
+
+const SharedDay = z.object({
+  id: z.string().max(100),
+  title: z.string().max(200),
+  summary: z.string().max(1000).optional().default(""),
+  stops: z.array(SharedStop).max(30),
+});
+
+const SharedDays = z.array(SharedDay).max(21);
+
 // Resolve a public share token to its trip. No login required —
 // the unguessable token is the capability. Throws if the link
 // is invalid or has been disabled by the owner.
@@ -64,14 +95,31 @@ export const getSharedTrip = createServerFn({ method: "GET" })
     }
 
     const r = row as Record<string, unknown>;
+
+    // Validate and sanitize the days payload before returning it.
+    const daysResult = SharedDays.safeParse(r.days ?? []);
+    if (!daysResult.success) {
+      console.error("Shared trip failed validation:", daysResult.error.message);
+      throw new Error("This trip couldn't be loaded.");
+    }
+
+    // Bound the top-level string fields too.
+    const title = typeof r.title === "string" ? r.title.slice(0, 200) : "";
+    const destination =
+      typeof r.destination === "string" ? r.destination.slice(0, 200) : "";
+    const countryCode =
+      typeof r.country_code === "string" && /^[A-Z]{2}$/.test(r.country_code)
+        ? r.country_code
+        : undefined;
+
     // Note: promptText and focus are intentionally excluded from the public
     // response — prompts often contain personal details (hotel names, dates).
     return {
       id: r.id as string,
-      title: r.title as string,
-      destination: r.destination as string,
-      countryCode: (r.country_code as string) ?? undefined,
-      days: (r.days ?? []) as Trip["days"],
+      title,
+      destination,
+      countryCode,
+      days: daysResult.data as Trip["days"],
       createdAt: r.created_at as string,
       updatedAt: r.updated_at as string,
     };
