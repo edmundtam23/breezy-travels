@@ -27,6 +27,16 @@ function esc(value: string | null | undefined): string {
   });
 }
 
+// Coerce a value to a finite number before interpolating it into HTML.
+// Strings flow through esc(), but numbers were interpolated raw — a poisoned
+// trip JSON (e.g. lat: '"><script>') would inject script into the exported
+// document. Number() coerces anything non-numeric to NaN, and the fallback
+// keeps the output well-formed.
+function num(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 const CATEGORY_COLORS: Record<string, string> = {
   food: "#B7362A",
   restaurant: "#B7362A",
@@ -56,12 +66,12 @@ function formatTime(time: string | undefined): string {
 
 function stopCard(stop: Stop, nextMode: string | undefined): string {
   const color = categoryColor(stop.category);
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lng}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${num(stop.lat)},${num(stop.lng)}`;
   return `
     <article class="stop">
       <div class="stop-time">
         <span class="time">${esc(formatTime(stop.time))}</span>
-        ${stop.durationMin ? `<span class="dur">${stop.durationMin} min</span>` : ""}
+        ${stop.durationMin ? `<span class="dur">${num(stop.durationMin)} min</span>` : ""}
       </div>
       <div class="stop-body">
         <div class="stop-head">
