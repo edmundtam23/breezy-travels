@@ -14,6 +14,10 @@ import { MapPin, Download, Copy, Check } from "lucide-react";
 import type { Trip } from "@/lib/types";
 
 export const Route = createFileRoute("/share/$token")({
+  // Share links are bearer URLs — keep them out of search indexes.
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: SharePage,
 });
 
