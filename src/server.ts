@@ -91,15 +91,12 @@ function isAllowedOrigin(origin: string): boolean {
 
 // Security headers added to every response.
 // CSP notes:
-// - 'unsafe-inline' and 'unsafe-eval' removed from script-src.
-// - Two SHA-256 hashes added to script-src to allow the specific inline
-//   scripts TanStack Start injects for SSR state dehydration. These hashes
-//   were captured from CSP violation reports on the live site. Only these
-//   exact scripts are permitted to run inline — any other injected script
-//   will be blocked.
-// - If TanStack Start is updated and the injected scripts change, new
-//   violation reports will appear in the console with updated hashes to
-//   replace these with.
+// - 'unsafe-eval' removed from script-src (was not needed).
+// - 'unsafe-inline' kept in script-src: TanStack Start injects inline scripts
+//   for SSR state dehydration. The hash-based approach described previously
+//   was never implemented (likely lost in a Lovable overwrite). To harden
+//   further, capture the SHA-256 hashes from CSP violation reports and
+//   replace 'unsafe-inline' with those specific hashes.
 // - 'unsafe-inline' kept in style-src: removing it breaks CSS-in-JS and
 //   component libraries (shadcn/ui) and styles cannot execute code anyway.
 // - wss://*.supabase.co added to connect-src for Supabase Realtime.
@@ -110,7 +107,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
+    "script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://*.ggpht.com",
@@ -170,8 +167,6 @@ export default {
       // Expose Cloudflare Worker env bindings (secrets/vars) to server functions.
       // In Workers, env is passed per-request and is NOT on process.env or globalThis by default.
       (globalThis as unknown as { __env?: unknown }).__env = env;
-      // Store the current request so server functions can read headers (e.g. Authorization).
-      (globalThis as unknown as { __request?: Request }).__request = request;
 
       // NOTE: We intentionally do NOT spread individual env values onto globalThis
       // to avoid leaking secrets (e.g. GEMINI_API_KEY) into the global scope.
