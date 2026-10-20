@@ -238,6 +238,13 @@ export function useUpdateTrip(id: string | undefined) {
             days: data.days,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
+            promptText: data.prompt_text ?? undefined,
+            focus: data.focus ?? undefined,
+            pace: data.pace ?? undefined,
+            budget: data.budget ?? undefined,
+            accommodation: data.accommodation ?? undefined,
+            accommodationLat: data.accommodation_lat ?? undefined,
+            accommodationLng: data.accommodation_lng ?? undefined,
           };
         }
       } else {
