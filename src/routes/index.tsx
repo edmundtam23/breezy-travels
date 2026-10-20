@@ -377,7 +377,7 @@ function MobileNav({ user }: { user: boolean }) {
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <div className="absolute right-0 top-11 z-50 w-48 rounded-xl border bg-white py-2 shadow-lg">
+          <div className="absolute right-0 top-11 z-50 w-48 rounded-xl border bg-card py-2 shadow-lg">
             <Link
               to="/inspiration"
               onClick={() => setOpen(false)}
