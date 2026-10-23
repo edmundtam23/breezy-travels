@@ -2,19 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-
-function readEnv(name: string): string | undefined {
-  const g = globalThis as unknown as Record<string, unknown> & {
-    __env?: Record<string, unknown>
-  };
-  const fromBinding = g.__env?.[name];
-  if (typeof fromBinding === "string") return fromBinding;
-  if (typeof g[name] === "string") return g[name] as string;
-  if (typeof process !== "undefined" && process.env?.[name]) {
-    return process.env[name];
-  }
-  return undefined;
-}
+import { getServiceClient, readEnv } from "./server-env";
 
 // Verify a Supabase session token passed directly from the client.
 async function requireAuth(token: string) {
@@ -33,87 +21,40 @@ async function requireAuth(token: string) {
   return data.user;
 }
 
-// Returns a Supabase client using the service role key.
-// This bypasses RLS and is required for writing to ai_rate_limits,
-// which has no user-facing RLS policies by design.
-// NEVER expose this client or its key to the browser.
-function getServiceClient() {
-  const url = readEnv("VITE_SUPABASE_URL") ?? "";
-  const serviceKey = readEnv("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!serviceKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not configured");
-  }
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false },
-  });
-}
-
-// Per-user AI rate limiting constants.
-// ITINERARY_COOLDOWN_MS: generateItinerary is expensive (multi-second Gemini call,
-// structured JSON response). 30s cooldown prevents runaway hammering while
-// still feeling responsive for normal use.
-// BLURB_COOLDOWN_MS: generateBlurb is cheap but can be called in a loop
-// (one per stop edit). 3s cooldown allows reasonable UX while limiting burst abuse.
-const ITINERARY_COOLDOWN_MS = 30_000; // 30 seconds between itinerary generations
-const BLURB_COOLDOWN_MS = 3_000;      // 3 seconds between blurb generations
+// Per-user AI usage limits, enforced atomically by the consume_ai_quota
+// Postgres function (cooldown + daily cap checked and recorded under a row
+// lock, so parallel requests can't slip past). This check FAILS CLOSED:
+// if the quota can't be verified, the request is refused rather than
+// allowed through — the Gemini free tier is 20 requests/day project-wide,
+// so an open failure mode could drain the whole pool.
+//
+// Cooldowns: 30s between itineraries (expensive multi-second calls), 3s
+// between blurbs (cheap, but can be looped from stop editing).
+// Daily caps: per user, so one account can't consume the shared pool.
+const DAILY_CAPS = { generateItinerary: 5, generateBlurb: 50 } as const;
+const COOLDOWN_SECONDS = { generateItinerary: 30, generateBlurb: 3 } as const;
 
 type AiAction = "generateItinerary" | "generateBlurb";
 
-// Checks whether the user is within the cooldown window for a given AI action.
-// Uses an upsert so the first call always succeeds and sets the timestamp.
-//
-// Strategy: optimistic upsert — we write last_call_at = now() and action = action
-// only when the cooldown has elapsed, using a conditional upsert. If the row
-// was updated less than cooldown_ms ago, Postgres won't update it and returns
-// the existing row so we can compute the wait time.
-//
-// We use two columns (one per action) so itinerary and blurb limits are
-// tracked independently — a blurb call doesn't burn the itinerary cooldown.
 async function checkAndRecordAiRateLimit(userId: string, action: AiAction): Promise<void> {
   const db = getServiceClient();
-  const cooldownMs = action === "generateItinerary" ? ITINERARY_COOLDOWN_MS : BLURB_COOLDOWN_MS;
-  const column = action === "generateItinerary" ? "last_itinerary_at" : "last_blurb_at";
-
-  // Fetch the current record for this user (if any).
-  const { data: existing, error: fetchError } = await db
-    .from("ai_rate_limits")
-    .select(column)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (fetchError) {
-    // If we can't read the rate limit table, fail open with a warning rather
-    // than blocking the user. Log so we notice misconfiguration.
-    console.error("ai_rate_limits fetch error (failing open):", fetchError.message);
-    return;
+  const { data, error } = await db.rpc("consume_ai_quota", {
+    p_user: userId,
+    p_action: action,
+    p_cooldown_seconds: COOLDOWN_SECONDS[action],
+    p_daily_cap: DAILY_CAPS[action],
+  });
+  if (error) {
+    console.error("consume_ai_quota failed:", error.message);
+    throw new Error("Couldn't verify usage limits. Please try again shortly.");
   }
-
-  if (existing) {
-    const lastCallAt = existing[column as keyof typeof existing] as string | null;
-    if (lastCallAt) {
-      const elapsedMs = Date.now() - new Date(lastCallAt).getTime();
-      if (elapsedMs < cooldownMs) {
-        const waitSec = Math.ceil((cooldownMs - elapsedMs) / 1000);
-        throw new Error(
-          `Please wait ${waitSec} more second${waitSec === 1 ? "" : "s"} before generating another ${
-            action === "generateItinerary" ? "itinerary" : "blurb"
-          }.`
-        );
-      }
-    }
+  if (data === -1) {
+    throw new Error("You've reached today's generation limit. Try again tomorrow.");
   }
-
-  // Record this call. upsert: insert if no row, update the relevant column if row exists.
-  const { error: upsertError } = await db
-    .from("ai_rate_limits")
-    .upsert(
-      { user_id: userId, [column]: new Date().toISOString() },
-      { onConflict: "user_id" }
+  if (typeof data === "number" && data > 0) {
+    throw new Error(
+      `Please wait ${data} more second${data === 1 ? "" : "s"} before trying again.`
     );
-
-  if (upsertError) {
-    // Non-fatal: log but don't block the user if the write fails.
-    console.error("ai_rate_limits upsert error (failing open):", upsertError.message);
   }
 }
 
@@ -125,30 +66,38 @@ export const getMapsApiKey = createServerFn({ method: "POST" })
     return { key };
   });
 
+// Output schema for Gemini responses. Bounds are generous for legitimate
+// output but reject absurd values (the parsed result is stored as trip
+// JSON and later rendered/shared, so unbounded fields are an injection
+// and bloat surface).
 const StopSchema = z.object({
-  name: z.string(),
-  address: z.string().optional().default(""),
-  lat: z.number(),
-  lng: z.number(),
-  time: z.string(),
-  durationMin: z.number().default(60),
-  blurb: z.string(),
-  visitTip: z.string().nullable().optional().catch(null),
-  category: z.string().optional().default(""),
+  name: z.string().max(200),
+  address: z.string().max(300).optional().default(""),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  time: z.string().max(10),
+  durationMin: z.number().min(0).max(1440).default(60),
+  blurb: z.string().max(600),
+  visitTip: z.string().max(300).nullable().optional().catch(null),
+  category: z.string().max(30).optional().default(""),
   travelModeToNext: z.enum(["WALKING", "DRIVING", "TRANSIT"]).default("DRIVING"),
 });
 
 const DaySchema = z.object({
-  title: z.string(),
-  summary: z.string(),
-  stops: z.array(StopSchema),
+  title: z.string().max(200),
+  summary: z.string().max(1000),
+  stops: z.array(StopSchema).max(30),
 });
 
 const ItinerarySchema = z.object({
-  title: z.string(),
-  destination: z.string(),
-  countryCode: z.string().length(2).optional(),
-  days: z.array(DaySchema),
+  title: z.string().max(200),
+  destination: z.string().max(200),
+  countryCode: z
+    .string()
+    .regex(/^[A-Za-z]{2}$/)
+    .transform((s) => s.toUpperCase())
+    .optional(),
+  days: z.array(DaySchema).max(21),
 });
 
 const MODEL = "gemini-2.5-flash";
@@ -199,6 +148,9 @@ export const generateItinerary = createServerFn({ method: "POST" })
         config: {
           systemInstruction:
             "You are a travel itinerary planner. Generate realistic itineraries with real, well-known points of interest and accurate coordinates.",
+          // Cap output: a 14-day itinerary with thinking fits comfortably;
+          // the cap exists to stop runaway generation, not to save tokens.
+          maxOutputTokens: 8192,
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -258,12 +210,14 @@ export const generateItinerary = createServerFn({ method: "POST" })
       const parsed = ItinerarySchema.parse(raw);
       return parsed;
     } catch (e: unknown) {
+      // Log the real error server-side; return only generic messages so
+      // upstream API details (billing state, internal errors) never leak
+      // to the client.
       const msg = e instanceof Error ? e.message : String(e);
+      console.error("generateItinerary failed:", msg);
       if (/429|rate/i.test(msg))
         throw new Error("Rate limit exceeded. Please try again shortly.");
-      if (/quota|billing|402/i.test(msg))
-        throw new Error("Gemini API quota exceeded. Check your Google AI Studio billing.");
-      throw new Error(`Gemini error: ${msg}`);
+      throw new Error("Couldn't generate an itinerary right now. Please try again.");
     }
   });
 
@@ -277,20 +231,31 @@ export const generateBlurb = createServerFn({ method: "POST" })
     await checkAndRecordAiRateLimit(user.id, "generateBlurb");
 
     const ai = getClient();
-    const res = await ai.models.generateContent({
-      model: MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: `${data.name}${data.destination ? ` in ${data.destination}` : ""}` },
-          ],
+    try {
+      const res = await ai.models.generateContent({
+        model: MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: `${data.name}${data.destination ? ` in ${data.destination}` : ""}` },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction:
+            "Write a single concise sentence (max 22 words) describing a travel point of interest. No emojis, no quotes.",
+          // The sentence itself is ~40 tokens; the headroom covers the
+          // model's thinking tokens so blurbs don't come back empty.
+          maxOutputTokens: 256,
         },
-      ],
-      config: {
-        systemInstruction:
-          "Write a single concise sentence (max 22 words) describing a travel point of interest. No emojis, no quotes.",
-      },
-    });
-    return { blurb: (res.text ?? "").trim() };
+      });
+      return { blurb: (res.text ?? "").trim() };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("generateBlurb failed:", msg);
+      if (/429|rate/i.test(msg))
+        throw new Error("Rate limit exceeded. Please try again shortly.");
+      throw new Error("Couldn't generate a description right now. Please try again.");
+    }
   });
