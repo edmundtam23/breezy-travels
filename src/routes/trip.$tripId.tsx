@@ -285,7 +285,15 @@ function ShareTripDialog({ trip }: { trip: Trip }) {
         trip_id: trip.id,
         created_by: user.id,
       });
-      if (error) throw error;
+      if (error) {
+        // 23505 = unique violation: a link already exists for this trip
+        // (one link per trip). Show the existing link instead of erroring.
+        if ((error as { code?: string }).code === "23505") {
+          await loadShare();
+          return;
+        }
+        throw error;
+      }
       setShareToken(token);
     } catch {
       toast.error("Couldn't create the share link.");
