@@ -1,35 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
 import type { Trip } from "./types";
-
-function readEnv(name: string): string | undefined {
-  const g = globalThis as unknown as Record<string, unknown> & {
-    __env?: Record<string, unknown>;
-  };
-  const fromBinding = g.__env?.[name];
-  if (typeof fromBinding === "string") return fromBinding;
-  if (typeof g[name] === "string") return g[name] as string;
-  if (typeof process !== "undefined" && process.env?.[name]) {
-    return process.env[name];
-  }
-  return undefined;
-}
-
-// Returns a Supabase client using the service role key.
-// This bypasses RLS and is required for resolving public share links,
-// which must work for viewers who aren't logged in.
-// NEVER expose this client or its key to the browser.
-function getServiceClient() {
-  const url = readEnv("VITE_SUPABASE_URL") ?? "";
-  const serviceKey = readEnv("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!serviceKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not configured");
-  }
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false },
-  });
-}
+import { getServiceClient } from "./server-env";
 
 const GetSharedTripInput = z.object({
   token: z.string().min(1).max(200),
