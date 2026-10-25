@@ -237,6 +237,75 @@ function Header({ trip, update }: { trip: Trip; update: ReturnType<typeof useUpd
   );
 }
 
+// Textarea that keeps edits local and commits on a delay, on blur, or on
+// unmount. Day title/summary used to save to Supabase on every keystroke
+// (select + upsert + full refetch per character, and out-of-order writes
+// could drop characters). `textareaRef` forwards the caller's ref so the
+// title's auto-height callback keeps working exactly as before.
+function DebouncedTextarea({
+  value,
+  onCommit,
+  delay = 800,
+  onBlur,
+  onChange,
+  textareaRef,
+  ...props
+}: Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange"> & {
+  value: string;
+  onCommit: (v: string) => void;
+  delay?: number;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  textareaRef?: React.Ref<HTMLTextAreaElement>;
+}) {
+  const [local, setLocal] = useState(value);
+  const latest = useRef(value);
+  const timer = useRef<number | null>(null);
+  const dirty = useRef(false);
+
+  // Sync from props only when the user isn't mid-edit.
+  useEffect(() => {
+    if (!dirty.current) {
+      setLocal(value);
+      latest.current = value;
+    }
+  }, [value]);
+
+  const flush = () => {
+    if (timer.current) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (dirty.current) {
+      dirty.current = false;
+      onCommit(latest.current);
+    }
+  };
+
+  // Flush a pending edit on unmount so nothing is lost on navigation.
+  useEffect(() => () => flush(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <textarea
+      {...props}
+      ref={textareaRef}
+      value={local}
+      onChange={(e) => {
+        const v = e.target.value;
+        setLocal(v);
+        latest.current = v;
+        dirty.current = true;
+        onChange?.(e);
+        if (timer.current) window.clearTimeout(timer.current);
+        timer.current = window.setTimeout(flush, delay);
+      }}
+      onBlur={(e) => {
+        flush();
+        onBlur?.(e);
+      }}
+    />
+  );
+}
+
 function ShareTripDialog({ trip }: { trip: Trip }) {
   const [open, setOpen] = useState(false);
   // undefined = not checked yet, null = no link, string = active token
@@ -247,8 +316,9 @@ function ShareTripDialog({ trip }: { trip: Trip }) {
   const loadShare = async () => {
     setShareToken(undefined);
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) {
       setShareToken(null);
       return;
@@ -271,8 +341,9 @@ function ShareTripDialog({ trip }: { trip: Trip }) {
 
   const handleCreate = async () => {
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) {
       toast.error("Sign in to share this trip.");
       return;
@@ -852,19 +923,20 @@ function Sidebar({
           <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Day {dayIdx + 1}
           </div>
-          <textarea
+          <DebouncedTextarea
             value={day.title}
             rows={1}
-            ref={(el) => {
+            textareaRef={(el) => {
               if (el) {
                 el.style.height = "auto";
                 el.style.height = el.scrollHeight + "px";
               }
             }}
             onChange={(e) => {
-              const v = e.target.value;
               e.target.style.height = "auto";
               e.target.style.height = e.target.scrollHeight + "px";
+            }}
+            onCommit={(v) => {
               update((t) => {
                 const days = t.days.slice();
                 days[dayIdx] = { ...days[dayIdx], title: v };
@@ -873,12 +945,11 @@ function Sidebar({
             }}
             className="mt-1 w-full resize-none bg-transparent text-2xl font-semibold tracking-tight focus:outline-none overflow-hidden md:overflow-x-auto md:whitespace-nowrap"
           />
-          <textarea
+          <DebouncedTextarea
             value={day.summary}
             placeholder="Add a short summary for this day…"
             rows={2}
-            onChange={(e) => {
-              const v = e.target.value;
+            onCommit={(v) => {
               update((t) => {
                 const days = t.days.slice();
                 days[dayIdx] = { ...days[dayIdx], summary: v };
