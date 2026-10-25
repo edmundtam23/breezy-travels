@@ -18,18 +18,59 @@ function readLocal(): Trip[] {
 function writeLocal(trips: Trip[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY, JSON.stringify(trips));
-  window.dispatchEvent(new Event("itineraries:changed"));
+  // No "itineraries:changed" dispatch here: saveTrip/deleteTrip dispatch
+  // once after the cache is updated, so listeners never see a stale cache.
 }
  
 async function getCurrentUserId(): Promise<string | null> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  // Local session only — no network round trip. RLS enforces ownership
+  // server-side, so the client only needs the ID for cache scoping and
+  // row ownership fields. Server functions still verify via getUser().
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user.id ?? null;
 }
  
 // ── Supabase CRUD ──────────────────────────────────────────────
  
-async function fetchTripsFromSupabase(): Promise<Trip[]> {
-  const userId = await getCurrentUserId();
+// Single row → Trip mapper. Two hand-written copies drifted apart before
+// (one edit path silently dropped fields on save); every read path uses this.
+type TripRow = {
+  id: string;
+  title: string;
+  destination: string;
+  country_code: string | null;
+  days: Trip["days"];
+  created_at: string;
+  updated_at: string;
+  prompt_text: string | null;
+  focus: string | null;
+  pace: string | null;
+  budget: string | null;
+  accommodation: string | null;
+  accommodation_lat: number | null;
+  accommodation_lng: number | null;
+};
+
+function rowToTrip(row: TripRow): Trip {
+  return {
+    id: row.id,
+    title: row.title,
+    destination: row.destination,
+    countryCode: row.country_code ?? undefined,
+    days: row.days,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    promptText: row.prompt_text ?? undefined,
+    focus: row.focus ?? undefined,
+    pace: row.pace ?? undefined,
+    budget: row.budget ?? undefined,
+    accommodation: row.accommodation ?? undefined,
+    accommodationLat: row.accommodation_lat ?? undefined,
+    accommodationLng: row.accommodation_lng ?? undefined,
+  };
+}
+
+async function fetchTripsFromSupabase(userId: string | null): Promise<Trip[]> {
   if (!userId) return [];
   const { data, error } = await supabase
     .from("trips")
@@ -40,22 +81,7 @@ async function fetchTripsFromSupabase(): Promise<Trip[]> {
     console.error("Error fetching trips:", error);
     return [];
   }
-return (data ?? []).map((row) => ({
-  id: row.id,
-  title: row.title,
-  destination: row.destination,
-  countryCode: row.country_code ?? undefined,
-  days: row.days,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-  promptText: row.prompt_text ?? undefined,
-  focus: row.focus ?? undefined,
-  pace: row.pace ?? undefined,
-  budget: row.budget ?? undefined,
-  accommodation: row.accommodation ?? undefined,
-  accommodationLat: row.accommodation_lat ?? undefined,
-  accommodationLng: row.accommodation_lng ?? undefined,
-}));
+  return (data ?? []).map((row) => rowToTrip(row as TripRow));
 }
  
 async function saveTripToSupabase(trip: Trip): Promise<void> {
@@ -108,10 +134,20 @@ function saveLocalTrip(trip: Trip) {
   if (idx >= 0) trips[idx] = next;
   else trips.push(next);
   writeLocal(trips);
+  // Keep the module cache in step so listeners don't need a refetch.
+  if (tripsCache !== null) {
+    tripsCache = trips;
+    tripsCacheTime = Date.now();
+  }
 }
  
 function deleteLocalTrip(id: string) {
-  writeLocal(readLocal().filter((t) => t.id !== id));
+  const trips = readLocal().filter((t) => t.id !== id);
+  writeLocal(trips);
+  if (tripsCache !== null) {
+    tripsCache = trips;
+    tripsCacheTime = Date.now();
+  }
 }
  
 // ── Public hooks & functions ───────────────────────────────────
@@ -142,25 +178,37 @@ export function useTrips(): Trip[] | null {
       if (!cancelled) setTrips(fresh);
     })();
 
-    // Listen for local changes
-    const handler = () => {
+    // Same-tab mutation: saveTrip/deleteTrip already updated the cache in
+    // place, so just re-read it — no network round trip.
+    const localHandler = () => {
+      const cached = getCachedTrips();
+      if (cached) {
+        if (!cancelled) setTrips(cached);
+      } else {
+        refreshTrips().then((t) => {
+          if (!cancelled) setTrips(t);
+        });
+      }
+    };
+    // Another tab changed localStorage — our cache may be stale; refetch.
+    const storageHandler = () => {
       refreshTrips().then((t) => {
         if (!cancelled) setTrips(t);
       });
     };
-    window.addEventListener("itineraries:changed", handler);
-    window.addEventListener("storage", handler);
+    window.addEventListener("itineraries:changed", localHandler);
+    window.addEventListener("storage", storageHandler);
 
     // Listen for auth changes — reload trips when user logs in/out
     const { data: authListener } = supabase.auth.onAuthStateChange(() => {
       invalidateTripsCache();
-      handler();
+      localHandler();
     });
 
     return () => {
       cancelled = true;
-      window.removeEventListener("itineraries:changed", handler);
-      window.removeEventListener("storage", handler);
+      window.removeEventListener("itineraries:changed", localHandler);
+      window.removeEventListener("storage", storageHandler);
       authListener.subscription.unsubscribe();
     };
   }, []);
@@ -185,14 +233,57 @@ function isCacheStale(): boolean {
   return Date.now() - tripsCacheTime > CACHE_TTL_MS;
 }
 
+let refreshInFlight: Promise<Trip[]> | null = null;
+
 async function refreshTrips(): Promise<Trip[]> {
-  const userId = await getCurrentUserId();
-  const remoteTrips = await fetchTripsFromSupabase();
-  const result = remoteTrips.length > 0 ? remoteTrips : readLocal();
-  tripsCache = result;
+  // Dedupe concurrent refreshes (every mounted useTrips used to refetch).
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    // Resolve the user once and pass it in — fetchTripsFromSupabase used
+    // to resolve it again, doubling the auth call per refresh.
+    const userId = await getCurrentUserId();
+    const remoteTrips = await fetchTripsFromSupabase(userId);
+    const result = remoteTrips.length > 0 ? remoteTrips : readLocal();
+    tripsCache = result;
+    tripsCacheTime = Date.now();
+    tripsCacheUserId = userId;
+    return result;
+  })();
+  try {
+    return await refreshInFlight;
+  } finally {
+    refreshInFlight = null;
+  }
+}
+
+// After a successful save, patch the cached entry in place so listeners
+// don't need a full refetch (which used to fire per keystroke).
+function updateCachedTrip(trip: Trip) {
+  if (tripsCache === null) return;
+  const idx = tripsCache.findIndex((t) => t.id === trip.id);
+  if (idx >= 0) tripsCache[idx] = trip;
+  else tripsCache.push(trip);
   tripsCacheTime = Date.now();
-  tripsCacheUserId = userId;
-  return result;
+}
+
+function removeCachedTrip(id: string) {
+  if (tripsCache === null) return;
+  tripsCache = tripsCache.filter((t) => t.id !== id);
+  tripsCacheTime = Date.now();
+}
+
+// Per-trip save queue: serialize writes so a slow earlier write can't land
+// after a newer one (the old per-keystroke path could drop characters).
+const saveQueues = new Map<string, Promise<void>>();
+
+function enqueueSave(tripId: string, work: () => Promise<void>): Promise<void> {
+  const prev = saveQueues.get(tripId) ?? Promise.resolve();
+  // Each queued promise catches, so the chain never breaks on an error.
+  const next = prev.then(work).catch((e) => {
+    console.error("Error saving trip:", e);
+  });
+  saveQueues.set(tripId, next);
+  return next;
 }
 
 export function invalidateTripsCache() {
@@ -207,12 +298,17 @@ export function useTrip(id: string | undefined) {
 }
  
 export async function saveTrip(trip: Trip) {
-  await saveTripToSupabase(trip);
+  const saved = { ...trip, updatedAt: new Date().toISOString() };
+  await enqueueSave(trip.id, async () => {
+    await saveTripToSupabase(saved);
+    updateCachedTrip(saved);
+  });
   window.dispatchEvent(new Event("itineraries:changed"));
 }
  
 export async function deleteTrip(id: string) {
   await deleteTripFromSupabase(id);
+  removeCachedTrip(id);
   window.dispatchEvent(new Event("itineraries:changed"));
 }
  
@@ -230,22 +326,7 @@ export function useUpdateTrip(id: string | undefined) {
           .eq("id", id)
           .single();
         if (data) {
-          trip = {
-            id: data.id,
-            title: data.title,
-            destination: data.destination,
-            countryCode: data.country_code ?? undefined,
-            days: data.days,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
-            promptText: data.prompt_text ?? undefined,
-            focus: data.focus ?? undefined,
-            pace: data.pace ?? undefined,
-            budget: data.budget ?? undefined,
-            accommodation: data.accommodation ?? undefined,
-            accommodationLat: data.accommodation_lat ?? undefined,
-            accommodationLng: data.accommodation_lng ?? undefined,
-          };
+          trip = rowToTrip(data as TripRow);
         }
       } else {
         trip = readLocal().find((t) => t.id === id);
